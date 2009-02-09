@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3"
+      xmlns:m="http://www.w3.org/1998/Math/MathML">
+  <model name="VilarOscillator" id="VilarOscillator">
+    <listOfCompartments>
+      <compartment id="cell" size="1"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="A"   initialAmount="0" compartment="cell" name="Activator A" />
+      <species id="C"   initialAmount="0" compartment="cell" name="Complex C"  />
+      <species id="DA"  initialAmount="1" compartment="cell" name="Gene A" />
+      <species id="DAp" initialAmount="0" compartment="cell" name="Gene A with bound activator" />
+      <species id="DR"  initialAmount="1" compartment="cell" name="Gene R" />
+      <species id="DRp" initialAmount="0" compartment="cell" name="Gene R with bound activator" />
+      <species id="MA"  initialAmount="0" compartment="cell" name="mRNA A"/>
+      <species id="MR"  initialAmount="0" compartment="cell" name="mRNA R"/>
+      <species id="R"   initialAmount="0" compartment="cell" name="Repressor R"/>
+    </listOfSpecies>
+
+    <listOfParameters>
+      <parameter id="gammaC"  value="2.0"/>
+      <parameter id="deltaA"  value="1" />
+      <parameter id="deltaR"  value="0.2" />
+      <parameter id="gammaA"  value="1" />
+      <parameter id="thetaA"  value="50" />
+      <parameter id="alphaA"  value="50" />
+      <parameter id="alphaAp" value="500" />
+      <parameter id="deltaMA" value="10" />
+      <parameter id="betaA"   value="50" />
+      <parameter id="gammaR"  value="1" />
+      <parameter id="thetaR"  value="100" />
+      <parameter id="alphaR"  value="0.01" />
+      <parameter id="alphaRp" value="50" />
+      <parameter id="deltaMR" value="0.5" />
+      <parameter id="betaR"   value="5" />
+    </listOfParameters>
+
+    <listOfReactions>
+      <reaction id="Reaction1" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="A" />
+	  <speciesReference species="R" />
+	</listOfReactants>
+	<listOfProducts>
+	  <speciesReference species="C" />
+	</listOfProducts>
+	<kineticLaw> <!-- A*R*gammaC" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>A</ci>
+	      <ci>R</ci>
+	      <ci>gammaC</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+      <reaction id="Reaction2" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="A" />
+	</listOfReactants>
+	<kineticLaw> <!-- A*deltaA" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>A</ci>
+	      <ci>deltaA</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+      <reaction id="Reaction3" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="C" />
+	</listOfReactants>
+	<listOfProducts>
+	  <speciesReference species="R" />
+	</listOfProducts>
+	<kineticLaw> <!-- C*deltaA" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>C</ci>
+	      <ci>deltaA</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+      <reaction id="Reaction4" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="R" />
+	</listOfReactants>
+	<kineticLaw> <!-- R*deltaR" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>R</ci>
+	      <ci>deltaR</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+      <reaction id="Reaction5" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="A" />
+	  <speciesReference species="DA" />
+	</listOfReactants>
+	<listOfProducts>
+	  <speciesReference species="DAp" />
+	</listOfProducts>
+	<kineticLaw> <!-- A*DA*gammaA" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>A</ci>
+	      <ci>DA</ci>
+	      <ci>gammaA</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+      <reaction id="Reaction6" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="DAp" />
+	</listOfReactants>
+	<listOfProducts>
+	  <speciesReference species="A" />
+	  <speciesReference species="DA" />
+	</listOfProducts>
+	<kineticLaw> <!-- DAp*thetaA" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>DAp</ci>
+	      <ci>thetaA</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+      <reaction id="Reaction7" reversible="false">
+	<listOfProducts>
+	  <speciesReference species="MA" />
+	</listOfProducts>
+	<listOfModifiers>
+	  <modifierSpeciesReference species="DA" />
+	</listOfModifiers>
+	<kineticLaw> <!-- DA*alphaA" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>DA</ci>
+	      <ci>alphaA</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+
+      <reaction id="Reaction8" reversible="false">
+	<listOfProducts>
+	  <speciesReference species="MA" />
+	</listOfProducts>
+	<listOfModifiers>
+	  <modifierSpeciesReference species="DAp" />
+	</listOfModifiers>
+	<kineticLaw> <!-- DAp*alphaAp" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>DAp</ci>
+	      <ci>alphaAp</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+      <reaction id="Reaction9" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="MA" />
+	</listOfReactants>
+	<kineticLaw> <!-- MA*deltaMA" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>MA</ci>
+	      <ci>deltaMA</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+
+      <reaction id="Reaction10" reversible="false">
+	<listOfProducts>
+	  <speciesReference species="A" />
+	</listOfProducts>
+	<listOfModifiers>
+	  <modifierSpeciesReference species="MA" />
+	</listOfModifiers>
+	<kineticLaw> <!-- MA*betaA" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>MA</ci>
+	      <ci>betaA</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+      <reaction id="Reaction11" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="A" />
+	  <speciesReference species="DR" />
+	</listOfReactants>
+	<listOfProducts>
+	  <speciesReference species="DRp" />
+	</listOfProducts>
+	<kineticLaw> <!-- A*DR*gammaR" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>A</ci>
+	      <ci>DR</ci>
+	      <ci>gammaR</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+
+      <reaction id="Reaction12" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="DRp" />
+	</listOfReactants>
+	<listOfProducts>
+	  <speciesReference species="A" />
+	  <speciesReference species="DR" />
+	</listOfProducts>
+	<kineticLaw> <!-- DRp*thetaR" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>DRp</ci>
+	      <ci>thetaR</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+
+      <reaction id="Reaction13" reversible="false">
+	<listOfProducts>
+	  <speciesReference species="MR" />
+	</listOfProducts>
+	<listOfModifiers>
+	  <modifierSpeciesReference species="DR" />
+	</listOfModifiers>
+	<kineticLaw> <!-- DR*alphaR" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>DR</ci>
+	      <ci>alphaR</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+
+      <reaction id="Reaction14" reversible="false">
+	<listOfProducts>
+	  <speciesReference species="MR" />
+	</listOfProducts>
+	<listOfModifiers>
+	  <modifierSpeciesReference species="DRp" />
+	</listOfModifiers>
+	<kineticLaw> <!-- DRp*alphaRp" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>DRp</ci>
+	      <ci>alphaRp</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+      
+
+      <reaction id="Reaction15" reversible="false">
+	<listOfReactants>
+	  <speciesReference species="MR" />
+	</listOfReactants>
+	<kineticLaw> <!-- MR*deltaMR" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>MR</ci>
+	      <ci>deltaMR</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+
+      <reaction id="Reaction16" reversible="false">
+	<listOfProducts>
+	  <speciesReference species="R" />
+	</listOfProducts>
+	<listOfModifiers>
+	  <modifierSpeciesReference species="MR" />
+	</listOfModifiers>
+	<kineticLaw> <!-- MR*betaR" -->
+	  <math xmlns="http://www.w3.org/1998/Math/MathML">
+	    <apply>
+	      <times/>
+	      <ci>MR</ci>
+	      <ci>betaR</ci>
+	    </apply>
+	  </math>
+	</kineticLaw>
+      </reaction>
+
+    </listOfReactions>
+  </model>
+</sbml>

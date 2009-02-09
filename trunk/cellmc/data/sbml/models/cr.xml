@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ | @file    cr.xml
+ | @author  Emmet Caulfield
+ | @brief   Validated SBML model of circadian rhythm.
+ | @version $Rev: 33 $
+ |
+ | This is an attempt at describing the reaction in 
+ | Section 5.2, "Circadian rhythm model", on p.15 of Hellander
+ | & Lotstedt, "Hybrid Method for the Chemical Master Equation",
+ | 2006.
+ |
+ | $Id: cr.xml 14 2008-12-23 08:32:48Z emmet $
+-->
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+
+  <annotation>
+    <svn:subversion xmlns:svn="http://svnbook.red-bean.com/en/1.4/svn.advanced.props.special.keywords.html">
+      <svn:Rev>$Rev: 33 $</svn:Rev>
+      <svn:Id>$Id: cr.xml 14 2008-12-23 08:32:48Z emmet $</svn:Id>
+    </svn:subversion>
+
+    <kit:provenance xmlns:kit="http://polacksbacken.net/wiki/SSACBE" />
+
+  </annotation>
+
+  <model id="CircadianRhythm" name="Circadian Rhythm">
+
+    <listOfCompartments>
+      <compartment id="cell" size="1"/>
+    </listOfCompartments>
+
+    <listOfSpecies>
+      <species id="Da"       initialAmount="10" compartment="cell" name="Gene A"/>
+      <species id="Da_prime" initialAmount="10" compartment="cell" name="Gene A with Bound Activator"/>
+      <species id="Ma"       initialAmount="10" compartment="cell" name="mRNA A"/>
+      <species id="Dr"       initialAmount="10" compartment="cell" name="Gene R"/>
+      <species id="Dr_prime" initialAmount="10" compartment="cell" name="Gene R with Bound Activator"/>
+      <species id="Mr"       initialAmount="10" compartment="cell" name="mRNA R"/>
+      <species id="C"        initialAmount="10" compartment="cell" name="Complex C"/>
+      <species id="A"        initialAmount="10" compartment="cell" name="Activator A"/>
+      <species id="R"        initialAmount="10" compartment="cell" name="Repressor R"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="alpha_A" value="50.0"/>
+      <parameter id="alpha_a_prime" value="500.0"/>
+      <parameter id="alpha_r" value="0.01"/>
+      <parameter id="alpha_r_prime" value="50"/>
+      <parameter id="beta_a" value="50.0"/>
+      <parameter id="beta_r" value="5.0"/>
+      <parameter id="delta_ma" value="10.0"/>
+      <parameter id="delta_mr" value="0.5"/>
+      <parameter id="delta_a" value="1.0"/>
+      <parameter id="delta_r" value="0.2"/>
+      <parameter id="gamma_a" value="1.0"/>
+      <parameter id="gamma_r" value="1.0"/>
+      <parameter id="gamma_c" value="2.0"/>
+      <parameter id="Theta_a" value="50.0"/>
+      <parameter id="Theta_r" value="100.0"/>
+    </listOfParameters>
+    <listOfReactions>
+      <!-- First group (of 4) -->
+      <reaction id="s_Da">
+        <listOfReactants>
+          <speciesReference species="Da_prime"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Da"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>Theta_a</ci>
+              <ci>Da_prime</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="s_Da_prime">
+        <listOfReactants>
+          <speciesReference species="Da"/>
+          <speciesReference species="A"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Da_prime"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>gamma_a</ci>
+              <ci>Da</ci>
+              <ci>A</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="s_Dr">
+        <listOfReactants>
+          <speciesReference species="Dr_prime"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Dr"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>Theta_r</ci>
+              <ci>Dr_prime</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="s_Dr_prime">
+        <listOfReactants>
+          <speciesReference species="Dr"/>
+          <speciesReference species="A"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="Dr_prime"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>gamma_r</ci>
+              <ci>Dr</ci>
+              <ci>A</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+
+      <!-- Second group (of 3) -->
+      <reaction id="s_Ma1">
+        <listOfProducts>
+          <speciesReference species="Ma"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>alpha_a_prime</ci>
+              <ci>Da_prime</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="s_Ma2">
+        <listOfProducts>
+          <speciesReference species="Ma"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>alpha_A</ci>
+              <ci>Da</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="a_Ma">
+        <listOfReactants>
+          <speciesReference species="Ma"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>delta_ma</ci>
+              <ci>Ma</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+
+      <!-- Third group (of 5) -->
+      <reaction id="s_A1">
+        <listOfProducts>
+          <speciesReference species="A"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>beta_a</ci>
+              <ci>Ma</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="s_A2">
+        <listOfProducts>
+          <speciesReference species="A"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>Theta_a</ci>
+              <ci>Da_prime</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="s_A3">
+        <listOfProducts>
+          <speciesReference species="A"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>Theta_r</ci>
+              <ci>Dr_prime</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="a_A">
+        <listOfReactants>
+          <speciesReference species="A"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>delta_a</ci>
+              <ci>A</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="s_C">
+        <listOfReactants>
+          <speciesReference species="A"/>
+          <speciesReference species="R"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="C"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>gamma_c</ci>
+              <ci>A</ci>
+              <ci>R</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+
+      <!-- Fourth group (of 3) -->
+      <reaction id="s_Mr1">
+        <listOfProducts>
+          <speciesReference species="Mr"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>alpha_r_prime</ci>
+              <ci>Dr_prime</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="s_Mr2">
+        <listOfProducts>
+          <speciesReference species="Mr"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>alpha_r</ci>
+              <ci>Dr</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="a_Mr">
+        <listOfReactants>
+          <speciesReference species="Mr"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>delta_mr</ci>
+              <ci>Mr</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <!-- Fifth group (of 3) -->
+      <reaction id="s_R1">
+        <listOfProducts>
+          <speciesReference species="R"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>beta_r</ci>
+              <ci>Mr</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="a_R">
+        <listOfProducts>
+          <speciesReference species="R"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>delta_r</ci>
+              <ci>R</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="s_r2">
+        <listOfReactants>
+          <speciesReference species="C"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="R"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>delta_a</ci>
+              <ci>C</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
