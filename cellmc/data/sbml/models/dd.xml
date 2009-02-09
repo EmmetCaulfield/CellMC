@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ | @file    me.xml
+ | @author  Emmet Caulfield
+ | @brief   Validated SBML model for decay dimerization model.
+ | @version 0.3
+ |
+ | This is an initial attempt at describing the reaction in 
+ | H. Li and L. Petzold, "Efficient Parallelization of 
+ | Stochastic Simulation Algorithm for Chemically Reacting 
+ | Systems on the Graphics Processing Unit", Example 4.1. 
+ |
+ | $Id$
+-->
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <annotation>
+    <svn:subversion xmlns:svn="http://svnbook.red-bean.com/en/1.4/svn.advanced.props.special.keywords.html">
+      <svn:Rev>$Rev$</svn:Rev>
+      <svn:Id>$Id$</svn:Id>
+    </svn:subversion>
+    <k:provenance xmlns:k="http://polacksbacken.net/wiki/SSACBE" xmlns:s="http://www.sbml.org/sbml/level2/version3" xmlns:m="http://www.w3.org/1998/Math/MathML">
+      <k:via>DecayDimerization-</k:via>
+    </k:provenance>
+  </annotation>
+  <model name="DecayDimerization">
+    <listOfCompartments>
+      <compartment id="cell" size="1"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="S1" name="Species 1" initialAmount="10000" compartment="cell"/>
+      <species id="S2" name="Species 2" initialAmount="0" compartment="cell"/>
+      <species id="S3" name="Species 3" initialAmount="0" compartment="cell"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="c1" value="1.0"/>
+      <!-- c2p = c2/2 -->
+      <parameter id="c2p" value="0.001"/>
+      <parameter id="c3" value="0.5"/>
+      <parameter id="c4" value="0.04"/>
+    </listOfParameters>
+    <s:listOfReactions xmlns:s="http://www.sbml.org/sbml/level2/version3" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:k="http://polacksbacken.net/wiki/SSACBE">
+      <reaction id="R2" reversible="false">
+        <listOfReactants>
+          <speciesReference species="S1"/>
+          <speciesReference species="S1"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="S2"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>c2p</ci>
+              <ci>S1</ci>
+              <apply>
+                <minus/>
+                <ci>S1</ci>
+                <cn type="integer">1</cn>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R3" reversible="false">
+        <listOfReactants>
+          <speciesReference species="S2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="S1"/>
+          <speciesReference species="S1"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>c3</ci>
+              <ci>S2</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R1" reversible="false">
+        <listOfReactants>
+          <speciesReference species="S1"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>c1</ci>
+              <ci>S1</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="SynthS3" reversible="false">
+        <listOfReactants>
+          <speciesReference species="S2"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="S3"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci>c4</ci>
+              <ci>S2</ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </s:listOfReactions>
+  </model>
+</sbml>

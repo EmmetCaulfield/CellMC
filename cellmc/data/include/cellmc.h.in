@@ -1,0 +1,186 @@
+#ifndef CELLMC_H
+#define CELLMC_H
+/*
+ * This file is used on both sides: in the compilation *OF* cellmc and
+ * then *BY* cellmc when it compiles models. It contains fundamental
+ * constants, etc, for which it is essential or highly desirable that
+ * consistency be maintained between cellmc and its output binaries.
+ *
+ * The contents of this file *MUST* be synchronised with the content
+ * of "option-mapping.c", otherwise there is no correspondence between
+ * a #define-d identifier and the command-line argument that it's
+ * intended to correspond to.
+ */
+#include <stdbool.h>
+
+/*
+ * The generated binaries need to align memory on a 16-byte boundary,
+ * so we check for ways of doing this:
+ */
+#undef HAVE_MM_MALLOC_H
+#undef HAVE_POSIX_MEMALIGN
+#undef HAVE_MEMALIGN
+#undef HAVE_MALLOC_ALIGN
+#undef OS_LINUX
+#undef OS_DARWIN
+
+/*
+ * Define MALLOC_ALIGN16 and FREE_ALIGN16 according to platform and
+ * availability of aligned memory functions.
+ */
+#if defined(__SSE2__)
+#   if defined(HAVE_MM_MALLOC_H)
+#       define MALLOC_ALIGN16(PTR,SZ)  (PTR=_mm_malloc(SZ,16))
+#       define FREE_ALIGN16(PTR)       _mm_free(PTR)
+#   elif defined(OS_DARWIN)
+#       define MALLOC_ALIGN16(PTR,SZ)  (PTR=malloc(SZ))
+#       define FREE_ALIGN16(PTR)       free(PTR)
+#   elif defined(OS_LINUX)
+#       if defined(HAVE_POSIX_MEMALIGN)
+#           define MALLOC_ALIGN16(PTR,SZ)  posix_memalign(&PTR, 16, SZ)
+#           define FREE_ALIGN16(PTR)       free(PTR)
+#       elif defined(HAVE_MEMALIGN)
+#           define MALLOC_ALIGN16(PTR,SZ)  (PTR=memalign(16, SZ))
+#           define FREE_ALIGN16(PTR)       free(PTR)
+#       else
+#           error "No way to align on 16-byte boundaries"
+#       endif
+#   else
+#       error "No way to align on 16-byte boundaries"
+#   endif
+#elif defined(__PPU__) || defined(__SPU__) || defined(ARCH_CELL)
+#   define MALLOC_ALIGN16(PTR,SZ)  (PTR=malloc_align(SZ, 7))
+#   define FREE_ALIGN16(PTR)       free(PTR)
+#else
+#   error "No way to align on 16-byte boundaries"
+#endif
+
+
+/*
+ * Name of SPU code entry-point on Cell/BE architecture
+ */
+#define CMC_SPU_CODE_HANDLE_NAME spu_model_text
+
+/*
+ * Note that all of the members of cellmc_app_t have corresponding
+ * preprocessor macros and XSL-T parameters. In all cases the name of
+ * the macro/param is the upper-case version of the C member
+ * identifier.
+ *
+ * There is a strict limit of 16 on the number of parameters that can
+ * be passed to an XSL transformation in libxslt, so adding members to
+ * this struct may cause problems if this limit is exceeded.
+ */
+#if !defined(__SPU__)
+typedef struct {
+    char    *exe;		/* Original executable name		*/
+    char    *ccmd;		/* Compile command used	to compile this	*/
+    char    *ver;		/* CellMC version used to compile this	*/
+    char    *lbl;		/* Label extracted from SBML model	*/
+    int      prec;		/* SPFP or DPFP				*/
+    int      log;		/* Which ln() function			*/
+    int      rng;		/* Which random number generator	*/
+    int      lpr;		/* Limited propensity recalculation	*/
+    bool     sso;		/* SIMD slot optimisation		*/
+    char    *arch;		/* Machine architecture string		*/
+    bool     prof;		/* If this is a profiling binary	*/
+#if defined(__SSE2__)
+    bool     thr;		/* If built with threading enabled	*/
+#elif defined(__PPU__) || defined(__PPC__)
+    bool     mpi;		/* If built with MPI enabled		*/
+#endif
+
+/* Compile-time model parameters */
+    int	     n_rxns;		/* Number of reactions (N_REACTIONS)	*/
+    int	     n_spxs;		/* Number of species (N_SPECIES)	*/
+} cellmc_app_t;
+#endif
+
+/*
+ * cellmc_app_t members which DO NOT have a list of valid values as
+ * #defines below
+ */
+#define CMC_EXE_DEFAULT	   NULL
+#define CMC_CCMD_DEFAULT   NULL
+#define CMC_VER_DEFAULT    NULL
+#define CMC_LBL_DEFAULT    NULL
+#define CMC_ARCH_DEFAULT   NULL
+#define CMC_N_RXNS_DEFAULT 0
+#define CMC_N_SPXS_DEFAULT 0
+
+/*
+ * Floating-point precision
+ */ 
+#define CMC_PREC_SINGLE 1
+#define CMC_PREC_DOUBLE 2
+
+
+/*
+ * Choice of ln() implementation
+ */
+#define CMC_LOG_ASM 1		/* SSE2 port of IBM Cell logf4()	*/
+#define CMC_LOG_LIB 2		/* Library version in math.h		*/
+#define CMC_LOG_FPU 3		/* Use IA32 FPU directly		*/
+
+
+/*
+ * Choice of PRNG
+ */
+#define CMC_RNG_STDLIB 1	/* ?rand48()-family PRNGs from stdlib	*/
+#define CMC_RNG_RSMT   2	/* Optimised reentrant version of SFMT	*/
+#define CMC_RNG_MCRAND 3	/* IBM's MT in mc_rand lib on Cell	*/
+
+
+/*
+ * Choice of limited propensity recalculation
+ */
+#define CMC_LPR_NONE 0		/* No LPR				*/
+#define CMC_LPR_SEMI 1		/* Reduced calculation, full summation	*/
+#define CMC_LPR_FULL 2		/* Reduced calculation and summation	*/
+
+/*
+ * SIMD slot optimisation (on/off)
+ */
+#define CMC_SSO_OFF 0
+#define CMC_SSO_ON  1
+
+/*
+ * Profiling (on/off)
+ */
+#define CMC_PROF_OFF 0
+#define CMC_PROF_ON  1
+
+/*
+ * Threading (on/off)
+ */
+#define CMC_THR_OFF 0
+#define CMC_THR_ON  1
+
+/*
+ * MPI (on/off)
+ */
+#define CMC_MPI_OFF 0
+#define CMC_MPI_ON  1
+
+
+/*
+ * Default cellmc_app_t initializer:
+ */
+#if defined(__SSE2__)
+#   define CMC_APP_STRUCT_DEFAULT { CMC_EXE_DEFAULT, CMC_CCMD_DEFAULT,	\
+	    CMC_VER_DEFAULT, CMC_LBL_DEFAULT, CMC_PREC_SINGLE,		\
+	    CMC_LOG_ASM, CMC_RNG_RSMT, CMC_LPR_SEMI, CMC_SSO_ON,	\
+	    CMC_ARCH_DEFAULT, CMC_PROF_OFF, CMC_THR_OFF,		\
+	    CMC_N_RXNS_DEFAULT, CMC_N_SPXS_DEFAULT			\
+	    }
+#elif defined(__PPU__) || defined(__PPC__)
+#   define CMC_APP_STRUCT_DEFAULT { CMC_EXE_DEFAULT, CMC_CCMD_DEFAULT,	\
+	    CMC_VER_DEFAULT, CMC_LBL_DEFAULT, CMC_PREC_SINGLE,		\
+	    CMC_LOG_LIB, CMC_RNG_MCRAND, CMC_LPR_NONE, CMC_SSO_OFF,	\
+	    CMC_ARCH_DEFAULT, CMC_PROF_OFF, CMC_MPI_OFF,		\
+	    CMC_N_RXNS_DEFAULT, CMC_N_SPXS_DEFAULT			\
+	    }
+#endif
+
+
+#endif /* CELLMC_H */

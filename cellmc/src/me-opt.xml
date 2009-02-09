@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ | @file    me.xml
+ | @author  Emmet Caulfield
+ | @brief   Validated SBML model for a metabolite-enzyme 
+ |          reaction.
+ | @version 0.3
+ |
+ | This is an initial attempt at describing the reaction in 
+ | Section 5.1, "Metabolites controled (sic.) by enzymes",
+ | on p.15 of Hellander & Lotstedt, "Hybrid Method for the
+ | Chemical Master Equation", 2006.
+ |
+ | $Id: me-opt.xml 39 2009-01-23 19:40:59Z emmet $
+-->
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+  <annotation>
+    <svn:subversion xmlns:svn="http://svnbook.red-bean.com/en/1.4/svn.advanced.props.special.keywords.html">
+      <svn:Rev>$Rev: 33 $</svn:Rev>
+      <svn:Id>$Id: me-opt.xml 39 2009-01-23 19:40:59Z emmet $</svn:Id>
+    </svn:subversion>
+    <k:provenance xmlns:k="http://polacksbacken.net/wiki/SSACBE" xmlns:s="http://www.sbml.org/sbml/level2/version3" xmlns:m="http://www.w3.org/1998/Math/MathML">
+      <k:via>MetaboliteEnzyme-33</k:via>
+    </k:provenance>
+  </annotation>
+  <model name="MetaboliteEnzyme">
+    <listOfCompartments>
+      <compartment id="cell" size="1"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="A" name="Species A" initialAmount="10" compartment="cell"/>
+      <species id="B" name="Species B" initialAmount="10" compartment="cell"/>
+      <species id="Ea" name="Enzyme A" initialAmount="10" compartment="cell"/>
+      <species id="Eb" name="Enzyme B" initialAmount="10" compartment="cell"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="kA" value="0.3"/>
+      <parameter id="kB" value="0.3"/>
+      <parameter id="k2" value="0.001"/>
+      <parameter id="Ki" value="60.0"/>
+      <parameter id="mu" value="0.002"/>
+      <parameter id="kEa" value="0.02"/>
+      <parameter id="kEb" value="0.02"/>
+      <parameter id="Kr" value="30.0"/>
+    </listOfParameters>
+    <s:listOfReactions xmlns:s="http://www.sbml.org/sbml/level2/version3" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:k="http://polacksbacken.net/wiki/SSACBE">
+      <reaction id="SynthA" reversible="false">
+        <listOfProducts>
+          <speciesReference species="A"/>
+        </listOfProducts>
+        <listOfModifiers>
+          <modifierSpeciesReference species="Ea"/>
+        </listOfModifiers>
+        <!-- rate[SynA] = kA*popn[Ea]/(1.0+(double)popn[A]/Ki); -->
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <divide/>
+              <apply>
+                <times/>
+                <ci> kA </ci>
+                <ci> Ea </ci>
+              </apply>
+              <apply>
+                <plus/>
+                <cn type="integer"> 1 </cn>
+                <apply>
+                  <divide/>
+                  <ci> A </ci>
+                  <ci> Ki </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="SynthB" reversible="false">
+        <listOfProducts>
+          <speciesReference species="B"/>
+        </listOfProducts>
+        <listOfModifiers>
+          <modifierSpeciesReference species="Eb"/>
+        </listOfModifiers>
+        <!-- rate[SynB] = kB*popn[Eb]/(1.0+(double)popn[B]/Ki); -->
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <divide/>
+              <apply>
+                <times/>
+                <ci> kB </ci>
+                <ci> Eb </ci>
+              </apply>
+              <apply>
+                <plus/>
+                <cn type="integer"> 1 </cn>
+                <apply>
+                  <divide/>
+                  <ci> B </ci>
+                  <ci> Ki </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="AnnhiAB" reversible="false">
+        <listOfReactants>
+          <speciesReference species="A"/>
+          <speciesReference species="B"/>
+        </listOfReactants>
+        <!-- rate[AnnAB] = k2*(double)(popn[A]*popn[B]); -->
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> k2 </ci>
+              <ci> A </ci>
+              <ci> B </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="AnnhiA" reversible="false">
+        <listOfReactants>
+          <speciesReference species="A"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> mu </ci>
+              <ci> A </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="AnnhiB" reversible="false">
+        <listOfReactants>
+          <speciesReference species="B"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> mu </ci>
+              <ci> B </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="AnnhiEa" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Ea"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> mu </ci>
+              <ci> Ea </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="SynthEb" reversible="false">
+        <listOfProducts>
+          <speciesReference species="Eb"/>
+        </listOfProducts>
+        <listOfModifiers>
+          <modifierSpeciesReference species="B"/>
+        </listOfModifiers>
+        <!-- rate[SynEb] = keB/(1.0+(double)popn[B]/Kr); -->
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <divide/>
+              <ci> kEb </ci>
+              <apply>
+                <plus/>
+                <cn type="integer"> 1 </cn>
+                <apply>
+                  <divide/>
+                  <ci> B </ci>
+                  <ci> Kr </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="AnnhiEb" reversible="false">
+        <listOfReactants>
+          <speciesReference species="Eb"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> mu </ci>
+              <ci> Eb </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="SynthEa" reversible="false">
+        <listOfProducts>
+          <speciesReference species="Ea"/>
+        </listOfProducts>
+        <listOfModifiers>
+          <modifierSpeciesReference species="A"/>
+        </listOfModifiers>
+        <!-- rate[SynEa] = keA/(1.0+(double)popn[A]/Kr); -->
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <divide/>
+              <ci> kEa </ci>
+              <apply>
+                <plus/>
+                <cn type="integer"> 1 </cn>
+                <apply>
+                  <divide/>
+                  <ci> A </ci>
+                  <ci> Kr </ci>
+                </apply>
+              </apply>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </s:listOfReactions>
+  </model>
+</sbml>

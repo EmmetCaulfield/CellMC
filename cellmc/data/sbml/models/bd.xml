@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ | @file    birth-death.xml
+ | @author  Emmet Caulfield
+ | @brief   Validated SBML model for 1D birth-death process
+ | @version $Rev: 33 $
+ |
+ | $Id: bd.xml 14 2008-12-23 08:32:48Z emmet $
+-->
+<sbml xmlns="http://www.sbml.org/sbml/level2/version3" level="2" version="3">
+
+  <annotation>
+    <svn:subversion xmlns:svn="http://svnbook.red-bean.com/en/1.4/svn.advanced.props.special.keywords.html">
+      <svn:Rev>$Rev: 33 $</svn:Rev>
+      <svn:Id>$Id: bd.xml 14 2008-12-23 08:32:48Z emmet $</svn:Id>
+    </svn:subversion>
+
+    <kit:provenance xmlns:kit="http://polacksbacken.net/wiki/SSACBE" />
+
+  </annotation>
+
+  <model name="BirthDeath">
+    <listOfCompartments>
+      <compartment id="cell" size="1"/>
+    </listOfCompartments>
+
+    <listOfSpecies>
+      <species id="A" name="Species A" initialAmount="50" compartment="cell"/>
+    </listOfSpecies>
+
+    <listOfParameters>
+      <parameter id="k"  value="5.0"/>
+      <parameter id="mu" value="0.1"/>
+    </listOfParameters>
+
+    <listOfReactions>
+      <reaction id="Birth">
+        <listOfProducts>
+          <speciesReference species="A"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> k </ci>
+          </math>
+        </kineticLaw>
+      </reaction>
+
+      <reaction id="Death">
+        <listOfReactants>
+          <speciesReference species="A"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+              <times/>
+              <ci> mu </ci>
+              <ci> A </ci>
+            </apply>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+
+  </model>
+</sbml>
