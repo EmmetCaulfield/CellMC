@@ -50,7 +50,7 @@ static void _fp_dump_block(
     T_PIS *rb = (T_PIS *)rblk;
 
     PING();
-    CLOG("Scalar block dump of %d trjs @ %08lx\n", n_trjs, (uint32_t)rblk);
+//    CLOG("Scalar block dump of %d trjs @ %08lx\n", n_trjs, (uint32_t)rblk);
 
     if(fp==NULL)
 	fp=stdout;
