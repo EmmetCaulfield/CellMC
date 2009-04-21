@@ -92,7 +92,11 @@
  * Logs filename, function, and line number to the console
  */
 #if defined(PONG)
-#   define PING() fprintf(stderr, "PING: %s:%d:%s()\n", basename(__FILE__), __LINE__, __func__)
+#   if defined(__SPU__)
+#      define PING() fprintf(stderr, "PING: %d:%d:%s()\n", cb.thr_id , __LINE__, __func__)
+#   else
+#      define PING() fprintf(stderr, "PING: %s:%d:%s()\n", basename(__FILE__), __LINE__, __func__)
+#   endif
 #else
 #   define PING()
 #endif
@@ -106,7 +110,7 @@
 #   if defined(__PPU__)
 #       define DPRINTF(...) fprintf(stderr, EXE "(PPU)> " __VA_ARGS__)
 #   elif defined(__SPU__)
-#       define DPRINTF(...) { fprintf(stderr, EXE "(SPU %02d)> ", _thr_id); fprintf(stderr, __VA_ARGS__); }
+#       define DPRINTF(...) { fprintf(stderr, EXE "(SPU %02d)> ", cb.thr_id); fprintf(stderr, __VA_ARGS__); }
 #   else
 #       define DPRINTF(...) fprintf(stderr, PACKAGE_NAME "> " __VA_ARGS__)
 #   endif

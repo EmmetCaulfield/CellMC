@@ -12,6 +12,7 @@
 #include <cellmc.h>
 #include <ctrlblk.h>
 #include <resblk.h>
+
 #include <debug_utils.h>
 
 #define CVT_VEC_ITOF(X) spu_convtf(X,0)
