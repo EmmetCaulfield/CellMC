@@ -5,7 +5,7 @@
  | @author  Emmet Caulfield.
  | @version 0.1
  |
- | $Id: old.xsl 29 2009-01-21 12:28:09Z emmet $
+ | $Id$
 -->
 
 <!-- Preamble: -->
@@ -41,20 +41,7 @@
 
 
   <xsl:template name="header">
-#include &lt;stdint.h&gt;
-#include &lt;string.h&gt;
-#include &lt;stdio.h&gt;
-
-#include &lt;spu_intrinsics.h&gt;
-#include &lt;spu_mfcio.h&gt;
-#include &lt;libmisc.h&gt;
-#include &lt;simdmath.h&gt;
-#include &lt;simdmath/logf4.h&gt;
-
-#include &lt;debug_utils.h&gt;
-#include &lt;vutil.h&gt;
-#include &lt;resblk.h&gt;
-#include &lt;ctrlblk.h&gt;
+#include &lt;support.h&gt;
 
 /*
  *Defines for number of reactions and number of species 
@@ -68,7 +55,7 @@
 
 
 <xsl:template name="negtau">
-  <xsl:text>_logf4(_vutil_rand())/ r_sum</xsl:text>
+  <xsl:text>_logf4(as_rand())/r_sum</xsl:text>
 </xsl:template>
 
 
@@ -193,20 +180,22 @@ Output constants
 
   <xsl:template name="update-times">  
 	    /* Compute tau and add it on to dt */
-	    tau = <xsl:call-template name="negtau"/>;
-	    DU_DUMPf4(tau, "SPU| -tau     = ");
+	    tau = as_tau(r_sum);
+	    uv_dprint_sf((uv_t)tau, "SPU| tau     = ");
 
-	    /* Promote the even elements of tau to doubles and add onto the time */
-	    vd_tmp = spu_extend(tau);
-            t02 -= vd_tmp;
-            
-	    /* Move the odd elements of tau into the even positions */
-	    tau = spu_rlqwbyte(tau, 4);
-	    vd_tmp = spu_extend(tau);
-            t13 -= vd_tmp;
-
-            t  = spu_roundtf(t02);
-            t += spu_rlqwbyte(spu_roundtf(t13), -4);
+           /*
+            * Kahan time summing: we use inline assembly mostly to defend
+            * against aggressive optimization problems.
+            *    x   = tau - kea
+            *    y   = t + x
+            *    kea = (y - t) - x     ( kea=y-t; kea-=x )
+            *    t   = y
+            */
+            tmp1 = spu_sub(tau, kea);
+            tmp2 = spu_add(t, tmp1);
+            kea  = spu_sub(tmp2, t);
+            kea  = spu_sub(kea, tmp1);
+            t    = tmp2;
   </xsl:template>
 
  
@@ -225,23 +214,22 @@ Generate the compute_trajectory function
 ======================================================= 
 -->
   <xsl:template name="compute-trajectory">
-	    t02 = (vec_double2){0.0f,0.0f};
-	    t13 = (vec_double2){0.0f,0.0f};
 	    t   = vf_0;
+	    kea = vf_0;
 
     <xsl:call-template name="reset-population"/>
-            while( (flg=spu_extract(spu_gather(flags=spu_cmpgt(t_stop,t)),0)) ) {
-	        DU_PRINTF("SPU|----------------------------------\n");
+            while( (flg=spu_extract(spu_gather(flags=spu_cmpgt(t_stopv,t)),0)) ) {
+	        DU_PRINTF("----------------------------------\n");
         <xsl:call-template name="update-propensities"/>
 		/* Compute tau and add it on to dt */
 		<xsl:call-template name="update-times"/>
 
 		/* Can re-use r_sum now */
-                r_sum *= _vutil_rand();
+                r_sum *= as_rand();
 
 
 	        /*
-		 * Unrolled slotation over the four elements of each vector
+		 * Unrolled iteration over the four slots of each SIMD vector
 		 */ 
 
     <xsl:call-template name="each-vec-el">
@@ -286,10 +274,12 @@ Generate the compute_trajectory function
 
   <xsl:template name="each-vec-el">
     <xsl:param name="slot"/>
+      <xsl:if test="$slot!=0">
 ELEMENT_<xsl:value-of select="$slot"/>:
+      </xsl:if>
 		/* if *this* time is already &lt;= 0 (!&gt;), skip this element */
 		if( !spu_extract(flags, <xsl:value-of select="$slot"/>) ) {
-		    DU_PRINTF("SPU| Skipping trj %d\n", <xsl:value-of select="$slot"/>);
+		    DU_PRINTF("Skipping trj %d\n", <xsl:value-of select="$slot"/>);
 	            <xsl:call-template name="next-element">
 		      <xsl:with-param name="slot" select="$slot"/>
 		    </xsl:call-template>
@@ -306,7 +296,7 @@ ELEMENT_<xsl:value-of select="$slot"/>:
 
   <xsl:template name="switch">
     <xsl:param name="slot"/>
-    <xsl:message><xsl:value-of select="$slot"/></xsl:message>
+<!--    <xsl:message><xsl:value-of select="$slot"/></xsl:message> -->
     <xsl:apply-templates select="//s:reaction" mode="case">
       <xsl:with-param name="slot" select="$slot"/>
     </xsl:apply-templates>
@@ -317,7 +307,7 @@ ELEMENT_<xsl:value-of select="$slot"/>:
     <xsl:param name="slot"/>
 		tmp -= spu_extract(r_<xsl:value-of select="@id"/>, <xsl:value-of select="$slot"/>);
 		if( 0.0f > tmp ) {
-		    DU_PRINTF("SPU| %10s++ (%2u) in slot %2u\n", "<xsl:value-of select='@id'/>", <xsl:value-of select="position()"/>, <xsl:value-of select="$slot"/>);
+		    DU_PRINTF("%10s++ (%2u) in slot %2u\n", "<xsl:value-of select='@id'/>", <xsl:value-of select="position()"/>, <xsl:value-of select="$slot"/>);
 		    rcount[<xsl:value-of select="position()-1"/>] += c_1_in_pos_<xsl:value-of select="$slot"/>;
     <xsl:apply-templates select="(s:listOfReactants|s:listOfProducts)/s:speciesReference" mode="case">
       <xsl:with-param name="slot" select="$slot"/>
@@ -368,35 +358,36 @@ ELEMENT_<xsl:value-of select="$slot"/>:
 /*
  * Global (static) data [!XSL]:
  */
-static volatile ctrlblk_t cb        __attribute__((aligned(128)));
-static volatile resblk_t  resblk[2] __attribute__((aligned(128)));
-static uint8_t   crb=0;    /* Current result block */
-static uint32_t  mail;
+static volatile ctrlblk_t cb         __attribute__((aligned(128)));
+static volatile T_PIV     *resblk[2] __attribute__((aligned(128)));
+static uint8_t  crb=0;    /* Current result block */
+
 
 static void _send_result_block(int dblk, volatile void *src, size_t len) {
     uint64_t dest;
 
+    PING();
+
     if( src == NULL ) {
-        src=&amp;resblk[crb];
+        src=resblk[crb];
     }
     if( len == 0 ) {
-        len=RB_SIZE_BYTES;
+        len=cb.blksz;
     }
 
     /*
      * Compute target address in main memory from base address.
      */
-    dest=cb.result_base+(dblk*RB_SIZE_BYTES);
+    dest=cb.result_base+(dblk*cb.blksz);
 
-    DU_PRINTF("SPU| block xfr %p to %llx\n", src, dest);
+    DPRINTF("block %d xfr from:%p to 0x%08llx, len=%lu\n", dblk, src, dest, len);
 
     /*
      * Initiate transfer from current just-filled buffer. A barrier/fence
      * is *not* necessary because we wait (in the following stanza) to 
-     * see make sure we don't start computing a new block until the old
+     * make sure we don't start computing a new block until the old
      * transfer is complete.
      */
-//	spu_dsync();	 
     mfc_put(src, dest, len, crb, 0, 0);
 
     /*
@@ -406,14 +397,18 @@ static void _send_result_block(int dblk, volatile void *src, size_t len) {
     crb = (crb==0);
     mfc_write_tag_mask( 1 &lt;&lt; crb );
     mfc_read_tag_status_all();
+
+    PING();
 }
 
 
 int main(uint64_t speid, uint64_t argp)
 {
-    vec_int4 *__restrict__ popn;
+    T_PIV *popn;
+    summblk_t *sb;		/* Summary block		*/
     int b, s;
     int n_rsets;
+    uint64_t nr_abs;
 
     register vec_uint4 flags;
     uint32_t flg;
@@ -429,17 +424,17 @@ int main(uint64_t speid, uint64_t argp)
     /*
      * Common global variables
      */
-    register vec_float4 r_sum;
+    register v4sf r_sum;
 
-    register vec_double2 t02 = (vec_double2){0.0f,0.0f};
-    register vec_double2 t13 = (vec_double2){0.0f,0.0f};
-    register vec_double2 vd_tmp;
-
-    register vec_float4 t;
-    register vec_float4 tau;
-    register vec_float4 t_stop;
+    register v4sf t;
+    register v4sf tau;
+    register v4sf t_stopv;
+    register v4sf kea, tmp1, tmp2;
 
     register float tmp;
+
+    v4su rcount[N_REACTIONS];
+
 
     /***********************************************\
      * BEGIN MODEL-DEPENDENT VARIABLE DECLARATIONS *
@@ -451,69 +446,42 @@ int main(uint64_t speid, uint64_t argp)
     \*********************************************/
 
     #ifndef RA_vf_1
-    register const vec_float4 vf_1 = {1.0f, 1.0f, 1.0f, 1.0f};
+    register const v4sf vf_1 = {1.0f, 1.0f, 1.0f, 1.0f};
     #define RA_vf_1
     #endif
 
     #ifndef RA_vf_0
-    register const vec_float4 vf_0 = {0.0f, 0.0f, 0.0f, 0.0f};
+    register const v4sf vf_0 = {0.0f, 0.0f, 0.0f, 0.0f};
     #define RA_vf_0
     #endif
 
+    (void)speid; /* Suppress warning */
+
+    resblk[0] = (T_PIV *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
+    resblk[1] = (T_PIV *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
 
     /* Initialize the reaction counters */
-    vec_uint4 rcount[N_REACTIONS];
     for(b=0; b&lt;N_REACTIONS; b++) {
-	rcount[b]=(vec_uint4){0,0,0,0};
+	rcount[b]=(v4su){0,0,0,0};
     }
     
-
-
-    /* See if the PPU wants us to tell it about the model */
-    mail=spu_read_in_mbox();
-    
-    if( 0 == mail ) {
-        /* Populate the control-block with model data */
-        cb.n_species   = N_SPECIES;
-        cb.n_reactions = N_REACTIONS;
-	cb.block_size  = RB_SIZE_BYTES;
-        strncpy(cb.model_name, "<xsl:call-template name='ident'/>", RB_PAD_BYTES-1);
-
-	DU_PRINTF("SPU|%llu>\t Sending %luB of model data to PPU\n", speid, sizeof(ctrlblk_t));
-	/* Send the model data to the PPU */
-//	spu_dsync()
-        mfc_put(&amp;cb, argp, sizeof(ctrlblk_t), 0, 0, 0);
-        mfc_write_tag_mask( 1 );
-        mfc_read_tag_status_all();
-
-	/* 
-         * Send a message to unblock the PPU. The content is
-	 * irrelevant since the mere receipt of the message
-         * *IS* the message.
-         */ 
-        spu_write_out_intr_mbox( 1 ); 
-    }
-
-    /* Wait until the PPU signals us to go */
-    spu_read_in_mbox();
-
-
     /* Read the complete control-block from the PPU */
     mfc_get(&amp;cb, argp, sizeof(ctrlblk_t), 0, 0, 0);
     mfc_write_tag_mask( 1 );
     mfc_read_tag_status_all();
 
-    DU_PRINTF("|%llu>\t Read complete control block\n", speid);
-    _vutil_srand( cb.rng_seed );
 
-    t_stop = spu_splats(cb.t_stop);
+    DU_PRINTF("Read complete control block\n");
+    as_srand( cb.seed );
+
+    t_stopv = spu_splats(cb.t_stop);
 
 
     /* Get going! */
-    for(b=0; b &lt; cb.n_blocks; b++) {
-        n_rsets=cb.rsets_per_block;
-	if(b==cb.n_blocks-1) {
-	    n_rsets=cb.rsets_residual;
+    for(b=0; b &lt; cb.n_blks; b++) {
+        n_rsets=cb.n_rsets_per_blk;
+	if(b==cb.n_blks-1) {
+	    n_rsets=cb.n_rsets_residual;
 	}
         for(s=0; s &lt; n_rsets; s++) {
 	    <xsl:call-template name="compute-trajectory" />
@@ -521,7 +489,7 @@ int main(uint64_t speid, uint64_t argp)
 	    /*
 	     * Save values from registers into current block
              */
-	    popn = &amp;(resblk[crb].data[ s*N_SPECIES ]);
+	    popn = resblk[crb]+s*N_SPECIES;//*sizeof(v4si);
 
             <xsl:call-template name="save-pops"/>
         }
@@ -529,15 +497,23 @@ int main(uint64_t speid, uint64_t argp)
 	_send_result_block(b, NULL, 0);
     }
 
-    /* See if the PPU wants summary data */
-    mail=spu_read_in_mbox();
-    if( 0 != mail ) {
-	/* 
-	 * Send the reaction counts to the PPU and block 
-	 * until they're sent.
-	 */
-        _send_result_block(cb.n_blocks, rcount, 16*N_REACTIONS);
+    nr_abs=0LL;
+    for(b=0; b&lt;N_REACTIONS; b++) {
+        nr_abs += spu_extract(rcount[b],0);
+        nr_abs += spu_extract(rcount[b],1);
+        nr_abs += spu_extract(rcount[b],2);
+        nr_abs += spu_extract(rcount[b],3);
     }
+
+    /*
+     * The summary data is sent in the extra block
+     */
+    PING();
+    sb = (summblk_t *)resblk[crb];
+    sb->nr_abs = nr_abs;
+//    sb->nr_con = nr_con;
+    _send_result_block(cb.n_blks, NULL, 0);
+
 
     /*
      * Make sure that all transfers are complete before exit.

@@ -90,7 +90,7 @@ static void _fp_dump_block(
     int rso;    /* Result-set offset    */
 
     PING();
-    CLOG("Vector block dump of %d rsets @ %08p\n", n_rsets, rblk);
+//    CLOG("Vector block dump of %d rsets @ %08p\n", n_rsets, rblk);
 
     if(fp==NULL)
 	fp=stdout;

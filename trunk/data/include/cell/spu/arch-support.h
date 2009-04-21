@@ -12,7 +12,9 @@
 #include <simdmath/logf4.h>	/* For _logf4()			*/
 #include <libmisc.h>		/* For malloc_align()		*/
 
-    // #define DEBUG 1
+    //#define DU_DEBUG 1
+    //#define PONG 1
+    //#define DEBUG 1
     // #define UV_DEBUG 1
 
 #include "../../univec.h"
@@ -20,6 +22,7 @@
 #include "../../error-macros.h"
 #include "../ctrlblk.h"
 #include "../summblk.h"
+#include "../debug_utils.h"
 
 #define CVT_VEC_ITOF(X) spu_convtf(X,0)
 

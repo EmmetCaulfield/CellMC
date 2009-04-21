@@ -34,39 +34,44 @@ Generate the main function
     <xsl:text>
 int main(uint64_t speid, uint64_t argp)
 {
-    T_PIS *saved = NULL;	/* Current save area		*/
+//    T_PIS *saved = NULL;	/* Current save area		*/
 
 #define SAVED(TRJ,SPX) saved[TRJ*N_SPECIES+SPX]
 
-    uv_t popn[N_SPECIES];	/* Working populations          */
+    uv_t *popn;			/* Working populations          */
     uv_t rate[N_REACTIONS];	/* Propensities			*/
-#if defined(CUMULATIVE_SUM_ARRAY)
-    uv_t cumr[N_REACTIONS];	/* Cumulative propensity sums	*/
-#endif
-    uv_t t;			/* Elapsed simulation time	*/
-    uv_t tau;			/* Timestep			*/
-    uv_t kea;			/* Kahan tau error accumulator	*/
-    v4sf t_stopv;		/* Stop time			*/
-    v4sf tmp1, tmp2;
+    register v4sf t;		/* Elapsed simulation time	*/
+    register v4sf tau;		/* Timestep			*/
+    register v4sf kea;		/* Kahan tau error accumulator	*/
+    register v4sf t_stopv;	/* Stop time			*/
+    register v4sf tmp1, tmp2;
+    register v4su flags;
 
     summblk_t *sb;		/* Summary block		*/
-    T_PIS nr_rxn[N_REACTIONS];	/* Reaction counts by reaction	*/
-    uv_t nr_slot;		/* Reaction count by slot	*/
+    uv_t nr_rxn[N_REACTIONS];	/* Reaction counts by reaction	*/
     uint64_t nr_abs = 0LL;	/* Absolute number of reactions	*/
     uint64_t nr_con = 0LL;	/* Contributing number of rxns	*/
 
-    uv_t r_sum, choice;
-    uv_t slot;
-    uv_t flg;
+    register v4sf r_sum;
+    int flg;
 
-    float r;
-//    float t_stop;
+   float tmp;
+
+    /*
+     * Common constants: these are used a lot
+     */ 
+    const v4si c_1_in_pos_0 = {1, 0, 0, 0};
+    const v4si c_1_in_pos_1 = {0, 1, 0, 0};
+    const v4si c_1_in_pos_2 = {0, 0, 1, 0};
+    const v4si c_1_in_pos_3 = {0, 0, 0, 1};
+
+
 
 </xsl:text><xsl:if test="$LPR = 'full'">
     register float oldr; /* Temporary partial propensity sum accumulator */
     register float newr; /* Temporary partial propensity sum accumulator */
 </xsl:if><xsl:text>
-    int b, i, n, e;
+    int b, i, n;//, e;
 
 #if SSO==CMC_SSO_OFF
     int n_rsets;
@@ -78,7 +83,7 @@ int main(uint64_t speid, uint64_t argp)
 
     /* Initialize the reaction counters */
     for(i=0; i&lt;N_REACTIONS; i++) {
-        nr_rxn[i] = (T_PIS)0;
+        nr_rxn[i].su = (v4su){0,0,0,0};
     }
 
     PING();
@@ -88,131 +93,96 @@ int main(uint64_t speid, uint64_t argp)
 
     PING();
 
-    t_stopv = spu_splats(cb.t_stop);
-    
     resblk[0] = (T_PIS *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
     resblk[1] = (T_PIS *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
 
-    t.sf    = UV_0_4sf;
-    tau.sf  = UV_0_4sf;
-    kea.sf  = UV_0_4sf;
-    flg.si  = UV_1_4si;
-
     as_srand( (uint32_t)cb.seed );
+    t_stopv = spu_splats(cb.t_stop);
 
 </xsl:text>
-    <xsl:call-template name="init-popn"/>
     <xsl:text>
     for(b=0; b &lt; cb.n_blks; b++) {
         if( b &lt; cb.n_blks-1 ) {
-	    n_trjs=cb.n_trjs_per_blk;
+	    n_rsets=cb.n_rsets_per_blk;
         } else {
-            n_trjs=cb.n_trjs_residual;
+            n_rsets=cb.n_rsets_residual;
         }
-        for(n=0; n&lt;n_trjs; ) {
+        for(n=0; n&lt;n_rsets; n++) {
+	    popn = (uv_t *)resblk[crb]+n*N_SPECIES;
+
+	    // equiv:compute-trajectory
+  	    t    = UV_0_4sf;
+	    kea  = UV_0_4sf;
+
 </xsl:text>
-    <xsl:if test="$LPR = 'none'">
-        <xsl:text>        _update_rates(rate, popn);&#10;</xsl:text>
-    </xsl:if>
-    <xsl:if test="$LPR != 'full'">
-        <xsl:text>        r_sum.sf=SUM_RATES;&#10;</xsl:text>
-    </xsl:if>
+    <xsl:call-template name="init-popn"/>
+<xsl:text>
+	    while( (flg=spu_extract(spu_gather(flags=spu_cmpgt(t_stopv,t)),0)) ) {
 
-    <xsl:text>
-//        DPRINTF(stderr, "------------------------------\n");
-        choice.sf = r_sum.sf * as_rand();
-        uv_dprint_sf(r_sum,  "r_sum  ");
-	uv_dprint_sf(choice, "choice ");
+	        // equiv:update-propensities
+	        _update_rates(rate, popn);
+		r_sum=SUM_RATES;
 
-	for(e=0; e&lt;T_NVS; e++) {
-	    nr_slot.i32[e]++;
-            r=choice.f[e];
+		// equiv:update-times
+		tau = as_tau(r_sum);
+		uv_dprint_sf(tau, "tau    ");
 
-	    /*
-             * Fast reactions are at low indices
+		/*
+		* Kahan time summing: we use inline assembly mostly to defend
+		* against aggressive optimization problems.
+		*    x   = tau - kea
+		*    y   = t + x
+		*    kea = (y - t) - x     ( kea=y-t; kea-=x )
+		*    t   = y
+		*/
+		tmp1 = spu_sub(tau, kea);
+		tmp2 = spu_add(t, tmp1);
+		kea  = spu_sub(tmp2, t);
+		kea  = spu_sub(kea, tmp1);
+		t    = tmp2;
+
+		r_sum *= as_rand();;
+	        /*
+		 * Unrolled iteration over the four slots of each SIMD vector
+		 */ 
+</xsl:text>
+    <xsl:call-template name="each-vec-el">
+      <xsl:with-param name="slot" select="'0'"/>
+    </xsl:call-template>
+
+    <xsl:call-template name="each-vec-el">
+      <xsl:with-param name="slot" select="'1'"/>
+    </xsl:call-template>
+
+    <xsl:call-template name="each-vec-el">
+      <xsl:with-param name="slot" select="'2'"/>
+    </xsl:call-template>
+
+    <xsl:call-template name="each-vec-el">
+      <xsl:with-param name="slot" select="'3'"/>
+    </xsl:call-template>
+<xsl:text>
+            }
+
+	    /* NO NEED TO DO THIS:
+	     * Save values from scratch registers into current block
              */
-#if defined(CUMULATIVE_SUM_ARRAY)
-            for(i=1; r&lt;cumr[i].f[e]; i++)
-                ; // Yes, I mean it!
-#else
-            for(i=0; r&gt;0.0f &amp;&amp; i&lt;=N_REACTIONS; i++) {
-		r -= rate[i].f[e];
-	    }
-#endif
-	    --i;
-
-	    slot.i32[e]=i;
-	    nr_rxn[i]++;
-	    nr_abs++;
-</xsl:text>
-                <xsl:call-template name="switch"/>
-<xsl:text>
-            if( ! flg.i32[e] ) {
-	        saved = (T_PIS *)&amp;(resblk[crb][ n * N_SPECIES ]);
-                for(i=0; i&lt;N_SPECIES; i++) {
-                    saved[i]  = SPOP(i,e);
-                    SPOP(i,e) = ipop[i];
-                }
-                n++;
-		nr_con         += nr_slot.i32[e];
-		nr_slot.i32[e]  = 0;
-		t.f[e]          = 0.0f;
-		kea.f[e]        = 0.0f;
-</xsl:text>
-    <xsl:if test="$LPR != 'none'">
-      <xsl:text>                _update_rates(rate, popn);&#10;</xsl:text>
-    </xsl:if>
-<xsl:text>
-	    }
-
-	} /* for(e=1:T_NVS) */
-
-	uv_dprint_si(slot, "slot   ");
-
-        tau.sf = as_tau(r_sum.sf);
-	uv_dprint_sf(tau, "tau    ");
-
-        /*
-         * Kahan time summing: we use inline assembly mostly to defend
-         * against aggressive optimization problems.
-         *    x   = tau - kea
-         *    y   = t + x
-         *    kea = (y - t) - x     ( kea=y-t; kea-=x )
-         *    t   = y
-         */
-	 tmp1   = spu_sub(tau.sf, kea.sf);
-	 tmp2   = spu_add(t.sf, tmp1);
-	 kea.sf = spu_sub(tmp2, t.sf);
-	 kea.sf = spu_sub(kea.sf, tmp1);
-	 t.sf   = tmp2;
-/*
-	__asm__ (
-            "fs        $75,  %[tau],  %[kea]   \n"
-	    "fa        $76,    %[t],    $75	\n"
-	    "fs      %[kea],    $76,    %[t]	\n"
-	    "fs      %[kea],  %[kea],    $75   \n"
-            "xor       %[t],    %[t],    %[t]	\n"
-	    "or        %[t],    %[t],    $76	\n"
-            : [t]"+&amp;v"(t.sf), [kea]"+&amp;v"(kea.sf)
-            : [tau]"v"(tau.sf)
-	    : "$75", "$76"
-        );
-*/
-
-	uv_dprint_se(t,   "t      ");
-	uv_dprint_se(tau, "tau    ");
-	uv_dprint_se(kea, "kea    ");
-
-        flg.su = spu_cmpgt(t_stopv,t.sf);
-
       }  /* n=for(1:n_rsets) */
 
       _send_result_block(b, NULL, 0);
 
+    /* Initialize the reaction counters */
+    for(i=0; i&lt;N_REACTIONS; i++) {
+        nr_abs += nr_rxn[i].i32[0];
+        nr_abs += nr_rxn[i].i32[1];
+        nr_abs += nr_rxn[i].i32[2];
+        nr_abs += nr_rxn[i].i32[3];
+        nr_rxn[i].su = (v4su){0,0,0,0};
+    }
+
     } /* b=(1:n_blks) */
 
-    DPRINTF("NR: abs=%"PRIu64", con=%"PRIu64"\n", nr_abs, nr_con);
-    
+
     /*
      * The summary data is sent in the extra block
      */
@@ -221,11 +191,11 @@ int main(uint64_t speid, uint64_t argp)
     sb->nr_con = nr_con;
     _send_result_block(b, NULL, 0);
 
+    PING();
 </xsl:text>
-    PING();
     <xsl:call-template name="complete-outstanding-dma"/>
+<xsl:text>
     PING();
-    <xsl:text>
     return 0;
 }
 </xsl:text>
@@ -294,4 +264,101 @@ static inline void _update_rates(uv_t rate[], uv_t popn[])
 <!--================================================-->
 
 
+
+<!--================================================-->
+<!-- SLOT ITERATION				    -->
+<!--================================================-->
+  <xsl:template name="next-element">
+    <xsl:param name="slot"/>
+    <xsl:choose>
+      <xsl:when test="$slot=3">
+		    continue;
+      </xsl:when>
+      <xsl:otherwise>
+		    goto ELEMENT_<xsl:value-of select="$slot+1"/>;
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+
+  <xsl:template name="each-vec-el">
+    <xsl:param name="slot"/>
+      <xsl:if test="$slot!=0">
+ELEMENT_<xsl:value-of select="$slot"/>:
+      </xsl:if>
+		/* if *this* time is already &lt;= 0 (!&gt;), skip this element */
+		if( !spu_extract(flags, <xsl:value-of select="$slot"/>) ) {
+	            <xsl:call-template name="next-element">
+		      <xsl:with-param name="slot" select="$slot"/>
+		    </xsl:call-template>
+	        }
+
+		tmp = spu_extract(r_sum,<xsl:value-of select="$slot"/>);
+    <xsl:call-template name="switch">
+      <xsl:with-param name="slot" select="$slot"/>
+    </xsl:call-template>
+  </xsl:template>
+
+
+  <xsl:template name="switch">
+    <xsl:param name="slot"/>
+<!--    <xsl:message><xsl:value-of select="$slot"/></xsl:message> -->
+    <xsl:apply-templates select="//s:reaction" mode="case">
+      <xsl:with-param name="slot" select="$slot"/>
+    </xsl:apply-templates>
+  </xsl:template>
+
+
+  <xsl:template match="s:reaction" mode="case">
+    <xsl:param name="slot"/>
+		tmp -= spu_extract(rate[i_<xsl:value-of select="@id"/>].sf, <xsl:value-of select="$slot"/>);
+		if( 0.0f > tmp ) {
+		    DU_PRINTF("SPU| %10s++ (%2u) in slot %2u\n", "<xsl:value-of select='@id'/>", <xsl:value-of select="position()"/>, <xsl:value-of select="$slot"/>);
+		    nr_rxn[<xsl:value-of select="position()-1"/>].su += c_1_in_pos_<xsl:value-of select="$slot"/>;
+    <xsl:apply-templates select="(s:listOfReactants|s:listOfProducts)/s:speciesReference" mode="case">
+      <xsl:with-param name="slot" select="$slot"/>
+    </xsl:apply-templates>
+    <xsl:call-template name="next-element">
+      <xsl:with-param name="slot" select="$slot"/>
+    </xsl:call-template>
+		}
+  </xsl:template>
+
+
+  <xsl:template match="s:listOfReactants/s:speciesReference" mode="case">
+    <xsl:param name="slot"/>
+		    VPOP(i_<xsl:value-of select="@species"/>) -= c_1_in_pos_<xsl:value-of select="$slot"/>;
+    <xsl:call-template name="lpr-opt">
+      <xsl:with-param name="species" select="@species"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <xsl:template match="s:listOfProducts/s:speciesReference" mode="case">
+    <xsl:param name="slot"/>
+		    VPOP(i_<xsl:value-of select="@species"/>) += c_1_in_pos_<xsl:value-of select="$slot"/>;
+    <xsl:call-template name="lpr-opt">
+      <xsl:with-param name="species" select="@species"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <xsl:template name="lpr-opt"/>
+
+  <xsl:template name="lpr-opt-disabled">
+    <xsl:param name="species"/>
+            /* Reactions affected by <xsl:value-of select="$species"/> */
+      <xsl:for-each select="//m:ci[normalize-space(.) = $species]">
+        <xsl:apply-templates select="ancestor::s:reaction" mode="adjust-prop"/>
+      </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template match="s:reaction" mode="adjust-prop">
+            r_sum -= rate[i_<xsl:value-of select="./@id"/>].sf;
+            rate[i_<xsl:value-of select="./@id"/>].sf=<xsl:apply-templates match="./s:kineticLaw"/>;
+            r_sum += rate[i_<xsl:value-of select="./@id"/>].sf;
+  </xsl:template>
+
+
+
 </xsl:transform>
+
+

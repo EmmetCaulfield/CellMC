@@ -128,7 +128,11 @@ char * ps_choose_xsltfile(const runconfig_t * const conf)
     }
     DIE("Unknown precision constant");
 #elif defined(ARCH_CELL)
-    return u_search_path(AC_XSL_PATH, "simd.xsl", conf->verbose);
+    if( conf->app.sso ) {
+	return u_search_path(AC_XSL_PATH, "simd+sso.xsl", conf->verbose);
+    } else {
+	return u_search_path(AC_XSL_PATH, "simd-sso.xsl", conf->verbose);
+    }
 #endif
 }
 
