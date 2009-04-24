@@ -86,8 +86,8 @@ Output constants
     #define C_<xsl:value-of select="./@id"/> vf_<xsl:value-of select="translate(@value,'.','_')"/>
       </xsl:when>
       <xsl:otherwise>
-    register const vec_float4 vf_<xsl:value-of select="translate(@value,'.','_')"/> = <xsl:call-template name="quadify">
-          <xsl:with-param name="type"  select="'vec_float4'" />
+    register const v4sf vf_<xsl:value-of select="translate(@value,'.','_')"/> = <xsl:call-template name="quadify">
+          <xsl:with-param name="type"  select="'v4sf'" />
           <xsl:with-param name="value" select="./@value" />
         </xsl:call-template>;
     #define RA_vf_<xsl:value-of select="translate(@value,'.','_')"/>
@@ -104,8 +104,8 @@ Output constants
     #define C_<xsl:value-of select="@id"/> vi_<xsl:value-of select="@initialAmount"/>
       </xsl:when>
       <xsl:otherwise>
-    const vec_int4 vi_<xsl:value-of select="@initialAmount"/> = <xsl:call-template name="quadify">
-          <xsl:with-param name="type"  select="'vec_int4'" />
+    const v4si vi_<xsl:value-of select="@initialAmount"/> = <xsl:call-template name="quadify">
+          <xsl:with-param name="type"  select="'v4si'" />
           <xsl:with-param name="value" select="@initialAmount" />
         </xsl:call-template>;
     #define RA_vi_<xsl:value-of select="@initialAmount"/>
@@ -131,11 +131,11 @@ Output constants
   </xsl:template>
 
   <xsl:template match="s:species" mode="vars">
-    register vec_int4 s_<xsl:value-of select="./@id"/>;
+    register v4si s_<xsl:value-of select="./@id"/>;
   </xsl:template>
 
   <xsl:template match="s:reaction" mode="vars">
-    register vec_float4 r_<xsl:value-of select="./@id"/>;
+    register v4sf r_<xsl:value-of select="./@id"/>;
   </xsl:template>
 
 
@@ -231,7 +231,9 @@ Generate the compute_trajectory function
 	        /*
 		 * Unrolled iteration over the four slots of each SIMD vector
 		 */ 
-
+#if PROF==CMC_PROF_OFF
+                nr_abs+=4LL;
+#endif
     <xsl:call-template name="each-vec-el">
       <xsl:with-param name="slot" select="'0'"/>
     </xsl:call-template>
@@ -247,7 +249,6 @@ Generate the compute_trajectory function
     <xsl:call-template name="each-vec-el">
       <xsl:with-param name="slot" select="'3'"/>
     </xsl:call-template>
-
 
 	        /* FIXME: Check for underflow here */
 	    }
@@ -308,7 +309,11 @@ ELEMENT_<xsl:value-of select="$slot"/>:
 		tmp -= spu_extract(r_<xsl:value-of select="@id"/>, <xsl:value-of select="$slot"/>);
 		if( 0.0f > tmp ) {
 		    DU_PRINTF("%10s++ (%2u) in slot %2u\n", "<xsl:value-of select='@id'/>", <xsl:value-of select="position()"/>, <xsl:value-of select="$slot"/>);
-		    rcount[<xsl:value-of select="position()-1"/>] += c_1_in_pos_<xsl:value-of select="$slot"/>;
+#if PROF==CMC_PROF_ON
+		    nr_rxn[<xsl:value-of select="position()-1"/>] += c_1_in_pos_<xsl:value-of select="$slot"/>;
+#else
+                    nr_con++;
+#endif
     <xsl:apply-templates select="(s:listOfReactants|s:listOfProducts)/s:speciesReference" mode="case">
       <xsl:with-param name="slot" select="$slot"/>
     </xsl:apply-templates>
@@ -405,21 +410,27 @@ static void _send_result_block(int dblk, volatile void *src, size_t len) {
 int main(uint64_t speid, uint64_t argp)
 {
     T_PIV *popn;
-    summblk_t *sb;		/* Summary block		*/
     int b, s;
     int n_rsets;
-    uint64_t nr_abs;
 
-    register vec_uint4 flags;
+#if PROF==CMC_PROF_ON
+    v4su nr_rxn[N_REACTIONS];
+#else
+    summblk_t *sb;		/* Summary block		*/
+    register uint64_t nr_abs=0LL;
+    register uint64_t nr_con=0LL;
+#endif
+
+    register v4su flags;
     uint32_t flg;
 
     /*
      * Common constants: these are used a lot
      */ 
-    register const vec_int4 c_1_in_pos_0 = {1, 0, 0, 0};
-    register const vec_int4 c_1_in_pos_1 = {0, 1, 0, 0};
-    register const vec_int4 c_1_in_pos_2 = {0, 0, 1, 0};
-    register const vec_int4 c_1_in_pos_3 = {0, 0, 0, 1};
+    register const v4si c_1_in_pos_0 = {1, 0, 0, 0};
+    register const v4si c_1_in_pos_1 = {0, 1, 0, 0};
+    register const v4si c_1_in_pos_2 = {0, 0, 1, 0};
+    register const v4si c_1_in_pos_3 = {0, 0, 0, 1};
 
     /*
      * Common global variables
@@ -433,7 +444,6 @@ int main(uint64_t speid, uint64_t argp)
 
     register float tmp;
 
-    v4su rcount[N_REACTIONS];
 
 
     /***********************************************\
@@ -460,11 +470,15 @@ int main(uint64_t speid, uint64_t argp)
     resblk[0] = (T_PIV *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
     resblk[1] = (T_PIV *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
 
+
+#if PROF==CMC_PROF_ON
     /* Initialize the reaction counters */
     for(b=0; b&lt;N_REACTIONS; b++) {
-	rcount[b]=(v4su){0,0,0,0};
+	nr_rxn[b]=(v4su){0,0,0,0};
     }
-    
+#endif    
+
+
     /* Read the complete control-block from the PPU */
     mfc_get(&amp;cb, argp, sizeof(ctrlblk_t), 0, 0, 0);
     mfc_write_tag_mask( 1 );
@@ -497,21 +511,19 @@ int main(uint64_t speid, uint64_t argp)
 	_send_result_block(b, NULL, 0);
     }
 
-    nr_abs=0LL;
-    for(b=0; b&lt;N_REACTIONS; b++) {
-        nr_abs += spu_extract(rcount[b],0);
-        nr_abs += spu_extract(rcount[b],1);
-        nr_abs += spu_extract(rcount[b],2);
-        nr_abs += spu_extract(rcount[b],3);
-    }
-
     /*
      * The summary data is sent in the extra block
      */
-    PING();
+#if PROF==CMC_PROF_ON
+    /* FIXME: Need to translate contents of nr_rxn into format expected by 'host' here */
+
+#else
     sb = (summblk_t *)resblk[crb];
     sb->nr_abs = nr_abs;
-//    sb->nr_con = nr_con;
+    sb->nr_con = nr_con;
+    fprintf(stderr, "[%llu,%llu]\n", nr_con, nr_abs);
+#endif
+
     _send_result_block(cb.n_blks, NULL, 0);
 
 
