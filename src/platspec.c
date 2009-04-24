@@ -13,6 +13,8 @@
 #include <runconfig.h>
 
 
+#define WIDTH "-m32"
+
 /* 
  * FIXME: put package -I and -L directories and install equivalents
  * into separate arrays and include them in gcc or spu-gcc's argument
@@ -20,7 +22,6 @@
  * installed. Maybe do this on the basis of the presence of
  * 'cellmc.c'?
  */
-
 #define PS_GCC_ARGS_COMMON "-Wextra", "-Wall", "-Winline", "-Wno-main"
 
 /*
@@ -82,7 +83,7 @@ static const char *_ps_spu_gcc_libs[] = {
 
 
 static const char *_ps_ppu_embedspu_args[] = {
-    "-m32",
+    WIDTH,
     AC_SPU_HANDLE
 };
 #define PS_PPU_EMBEDSPU_ARGS_LEN ((int)(sizeof(_ps_ppu_embedspu_args)/sizeof(char *)))
@@ -96,7 +97,7 @@ static const char *_ps_ppu_ar_args[] = {
 
 
 static const char *_ps_ppu_gcc_args[] = {
-    "-m32"					,
+    WIDTH					,
     "-maltivec"					,
     "-I" TOPDIR "/data/include"                 ,
     "-I" TOPDIR "/data/include/cell"            ,
