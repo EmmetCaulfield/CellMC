@@ -2,7 +2,7 @@
 # $Id: configure.ac 89 2009-02-02 20:26:06Z emmet $
 
 # Warning! Warning! Warning!
-#
+# 
 
 # Failure to distinguish between the 'cellmc' application and the what
 # it uses to compile models, and extra programs that it needs to do
@@ -61,7 +61,7 @@ PKG_CHECK_MODULES([libxslt], [libxslt >= 1.1.11])
 # required on both platforms.
 AC_HEADER_STDBOOL
 AC_C_CONST
-AC_CHECK_HEADERS([limits.h getopt.h])
+AC_CHECK_HEADERS([limits.h getopt.h mpi.h])
 AC_CHECK_FUNCS([getopt_long], [], AC_MSG_ERROR([getopt_long is required]))
 AC_CHECK_FUNCS([posix_memalign memalign malloc_align]) 
 
