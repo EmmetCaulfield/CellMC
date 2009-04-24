@@ -74,7 +74,7 @@ struct sim_info_t {
 void si_init(sim_info_t *si, int argc, char * argv[]);
 void si_start(sim_info_t *si);
 void si_stop(sim_info_t  *si);
-void si_print_results(sim_info_t * const si);
+FILE *si_print_results(sim_info_t * const si);
 void si_header(sim_info_t *si, FILE *fp, const char * const pre, const char * const post);
 void si_cleanup(sim_info_t *si);
 

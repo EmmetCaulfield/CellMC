@@ -208,6 +208,11 @@ void c_compile(runconfig_t *conf)
     for(i=0; i<PS_PPU_LD_ARGS_LEN; i++) {
 	PS_CATON(_ps_ppu_ld_args[i]);
     }
+#if defined(HAVE_MPI_H)
+    if( conf->app.mpi ) {
+      PS_CATON("-lmpi");
+    }
+#endif
 
     sv[n]=NULL;
 

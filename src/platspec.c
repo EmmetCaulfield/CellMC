@@ -29,7 +29,6 @@
  */
 static const char *_ps_aux_files[] = {
 #if defined(ARCH_CELL)
-    "main"	,
     "ctrlblk"	,
 #endif
     "sim-info"		,
@@ -104,6 +103,12 @@ static const char *_ps_ppu_gcc_args[] = {
     "-I" TOPDIR "/data/include/cell/ppu"        ,
     "-I" AC_SDKDIR "/usr/include"		,
     "-I" AC_SDKDIR "/prototype/usr/include"	,
+#if defined(AC_MPI_INC_PATH)
+    "-I" AC_MPI_INC_PATH			,
+#endif
+#if defined(AC_MPI_LIB_PATH)
+    "-L" AC_MPI_LIB_PATH			,
+#endif
     "-L" AC_SDKDIR "/usr/lib"			,
     "-L" AC_SDKDIR "/prototype/usr/lib"
 };
@@ -282,16 +287,22 @@ static void _ps_obj_src_pair(runconfig_t *conf, const char *name, char **ofile, 
 char **ps_aux_files(runconfig_t *const conf, int *len)
 {
     static char *sv[AC_GCC_ARGS_MAX+1];
-    int i;
+    int i=0;
 
-    for(i=0; i<PS_AUX_FILES_LEN; i++) {
-	_ps_obj_src_pair( conf, _ps_aux_files[i], &sv[2*i], &sv[2*i+1]);
+    if( conf->app.mpi ) {
+	_ps_obj_src_pair( conf, "main-mpi", &sv[2*i], &sv[2*i+1]);
+    } else {
+	_ps_obj_src_pair( conf, "main", &sv[2*i], &sv[2*i+1]);
+    }
+    for(i=1; i<=PS_AUX_FILES_LEN; i++) {
+	_ps_obj_src_pair( conf, _ps_aux_files[i-1], &sv[2*i], &sv[2*i+1]);
     }
     if( conf->app.prof ) {
 	_ps_obj_src_pair( conf, PS_AUX_PROF_ON, &sv[2*i], &sv[2*i+1]);
     } else {
 	_ps_obj_src_pair( conf, PS_AUX_PROF_OFF, &sv[2*i], &sv[2*i+1]);
     }
+
     i++;
     *len=i;
 
@@ -491,5 +502,3 @@ void ps_ppu_gcc_argv(runconfig_t * const conf, char *sv[], char **pp, int *nn)
 
 
 #endif /* defined(ARCH_CELL) */
-
-

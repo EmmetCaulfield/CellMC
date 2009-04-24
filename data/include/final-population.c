@@ -50,7 +50,7 @@ static void _fp_dump_block(
     T_PIS *rb = (T_PIS *)rblk;
 
     PING();
-//    CLOG("Scalar block dump of %d trjs @ %08lx\n", n_trjs, (uint32_t)rblk);
+    //    CLOG("Scalar block dump of %d trjs @ %08lx\n", n_trjs, (uint32_t)rblk);
 
     if(fp==NULL)
 	fp=stdout;
@@ -90,7 +90,7 @@ static void _fp_dump_block(
     int rso;    /* Result-set offset    */
 
     PING();
-//    CLOG("Vector block dump of %d rsets @ %08p\n", n_rsets, rblk);
+    //    CLOG("Vector block dump of %d rsets @ %08p\n", n_rsets, rblk);
 
     if(fp==NULL)
 	fp=stdout;
@@ -166,13 +166,16 @@ static void _fp_print_blockset(sim_info_t *si, void *start, FILE *fp)
     int b; /* Block number */
 
     if(si->verbose) {
-	CLOG("Printing SPU vector block-set at 0x%08x\n", (uint32_t)start);
+        CLOG("Printing SPU vector blocks at 0x%08x (%d blocks)\n", (uint32_t)start, si->n_blks_per_thr);
     }
-
+    
     for(b=0; b<(si->n_blks_per_thr-1); b++) {
 	_fp_dump_block( start+(b*si->blksz), si->n_rsets_per_blk, fp);
     }
     b=si->n_blks_per_thr-1; /* t'be sure */
+    if(si->verbose) {
+        CLOG("Printing SPU vector residual block (%d rsets)\n", (uint32_t)start, si->n_rsets_residual);
+    }    
     _fp_dump_block( start+(b*si->blksz), si->n_rsets_residual, fp);
 
 }

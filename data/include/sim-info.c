@@ -20,6 +20,10 @@
 #include "app-support.h"
 #include "error-macros.h"
 
+#if MPI==CMC_MPI_ON
+#   include <mpi.h>
+#endif
+
 #if PROF==CMC_PROF_OFF
 #   include "final-population.h"
 #else
@@ -155,6 +159,10 @@ void si_init(sim_info_t *si, int argc, char * argv[])
     si->n_thrs = 2;
 #elif defined(__PPU__)
     si->n_thrs = 16;
+#endif
+
+#if MPI==CMC_MPI_ON
+    MPI_Comm_size(MPI_COMM_WORLD,&si->n_mpi_nodes);
 #endif
 
     /*
@@ -402,12 +410,11 @@ void si_header(sim_info_t *si, FILE *fp, const char * const pre, const char * co
 
 
 
-
-
-
-
 #if defined(__PPU__)
     fprintf(fp, "%sBuilt with MPI support            = %s%s\n", pre, om_bool_str(si->app.mpi), post);
+#  if MPI==CMC_MPI_ON
+    fprintf(fp, "%sNumber of MPI nodes               = %d%s\n", pre, si->n_mpi_nodes, post);
+#  endif
 #else
     fprintf(fp, "%sBuilt with MPI support            = (not available)%s\n", pre, post);
 #endif
@@ -453,7 +460,7 @@ void si_header(sim_info_t *si, FILE *fp, const char * const pre, const char * co
 
 
 
-void si_print_results(sim_info_t * const si)
+FILE *si_print_results(sim_info_t * const si)
 {
     FILE *fp = stdout;
 
@@ -475,11 +482,15 @@ void si_print_results(sim_info_t * const si)
     rs_print_sro_xslt(si, fp);
 #endif
 
+#if MPI==CMC_MPI_OFF
     if( fp != stdout ) {
 	fclose(fp);
     }
+#else
+    return fp;
+#endif
 
-    return;
+    return NULL;
 }
 
 

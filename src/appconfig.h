@@ -33,7 +33,17 @@
 #endif
 
 /*
- * Default optimization-leve for 'gcc'
+ * Added for weirdness on PS3 cluster. Shouldn't affect better installations
+ */
+#if defined(HAVE_MPI_H)
+#   define AC_MPI_LIB_PATH	"/home/emmet/opt/lib"
+#   define AC_MPI_INC_PATH	"/home/emmet/opt/include"
+#endif
+
+
+
+/*
+ * Default optimization-level for 'gcc'
  */
 #define AC_GCC_OPTIM            '3'
 
