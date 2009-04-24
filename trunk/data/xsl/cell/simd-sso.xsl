@@ -521,7 +521,6 @@ int main(uint64_t speid, uint64_t argp)
     sb = (summblk_t *)resblk[crb];
     sb->nr_abs = nr_abs;
     sb->nr_con = nr_con;
-    fprintf(stderr, "[%llu,%llu]\n", nr_con, nr_abs);
 #endif
 
     _send_result_block(cb.n_blks, NULL, 0);
