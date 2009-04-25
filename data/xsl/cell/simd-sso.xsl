@@ -363,29 +363,22 @@ ELEMENT_<xsl:value-of select="$slot"/>:
 /*
  * Global (static) data [!XSL]:
  */
-static volatile ctrlblk_t cb         __attribute__((aligned(128)));
-static T_PIV     *resblk[2] __attribute__((aligned(128)));
-static uint8_t  crb=0;    /* Current result block */
+static volatile  ctrlblk_t cb __attribute__((aligned(128)));
+static T_PIV    *resblk[2]    __attribute__((aligned(128)));
+static uint8_t   crb=0;    /* Current result block */
 
 
-static void _send_result_block(int dblk, volatile void *src, size_t len) {
+static void _send_result_block(int dblk) {
     uint64_t dest;
 
     PING();
-
-    if( src == NULL ) {
-        src=resblk[crb];
-    }
-    if( len == 0 ) {
-        len=cb.blksz;
-    }
 
     /*
      * Compute target address in main memory from base address.
      */
     dest=cb.result_base+(dblk*cb.blksz);
 
-    DPRINTF("block %d xfr from:%p to 0x%08llx, len=%lu\n", dblk, src, dest, len);
+    DPRINTF("block %d xfr from:%p to 0x%08llx, len=%lu\n", dblk, resblk[crb], dest, cb.blksz);
 
     /*
      * Initiate transfer from current just-filled buffer. A barrier/fence
@@ -393,7 +386,7 @@ static void _send_result_block(int dblk, volatile void *src, size_t len) {
      * make sure we don't start computing a new block until the old
      * transfer is complete.
      */
-    mfc_put(src, dest, len, crb, 0, 0);
+    mfc_put(resblk[crb], dest, cb.blksz, crb, 0, 0);
 
     /*
      * Switch to the other buffer and make sure that the previous 
@@ -467,9 +460,6 @@ int main(uint64_t speid, uint64_t argp)
 
     (void)speid; /* Suppress warning */
 
-    resblk[0] = (T_PIV *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
-    resblk[1] = (T_PIV *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
-
 
 #if PROF==CMC_PROF_ON
     /* Initialize the reaction counters */
@@ -487,6 +477,9 @@ int main(uint64_t speid, uint64_t argp)
 
     DU_PRINTF("Read complete control block\n");
     as_srand( cb.seed );
+
+    resblk[0] = (T_PIV *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
+    resblk[1] = (T_PIV *)malloc_align( cb.blksz, 7 ); /* 7=lg(128) */
 
     t_stopv = spu_splats(cb.t_stop);
 
@@ -508,7 +501,7 @@ int main(uint64_t speid, uint64_t argp)
             <xsl:call-template name="save-pops"/>
         }
 
-	_send_result_block(b, NULL, 0);
+	_send_result_block(b);
     }
 
     /*
@@ -523,7 +516,7 @@ int main(uint64_t speid, uint64_t argp)
     sb->nr_con = nr_con;
 #endif
 
-    _send_result_block(cb.n_blks, NULL, 0);
+    _send_result_block(cb.n_blks);
 
 
     /*
