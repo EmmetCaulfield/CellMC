@@ -239,8 +239,8 @@ int main(int argc, char *argv[])
 
 #if PROF==CMC_PROF_OFF
     void *vpp;
-    int rc;			/* G.P return code	*/
-#elif THR==CMC_THR_ON
+#endif
+#if THR==CMC_THR_ON
     int rc;
 #endif
 
