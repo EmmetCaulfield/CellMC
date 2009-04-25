@@ -364,7 +364,7 @@ ELEMENT_<xsl:value-of select="$slot"/>:
  * Global (static) data [!XSL]:
  */
 static volatile ctrlblk_t cb         __attribute__((aligned(128)));
-static volatile T_PIV     *resblk[2] __attribute__((aligned(128)));
+static T_PIV     *resblk[2] __attribute__((aligned(128)));
 static uint8_t  crb=0;    /* Current result block */
 
 

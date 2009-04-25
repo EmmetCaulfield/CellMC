@@ -288,19 +288,22 @@ static void _ps_obj_src_pair(runconfig_t *conf, const char *name, char **ofile, 
 char **ps_aux_files(runconfig_t *const conf, int *len)
 {
     static char *sv[AC_GCC_ARGS_MAX+1];
-    int i=0;
-    int k=0;
+    int i=0, k=0;
 
-#if MPI==CMC_MPI_ON
+#if defined(HAVE_MPI_H)
     if( conf->app.mpi ) {
-	_ps_obj_src_pair( conf, "main-mpi", &sv[0], &sv[1]);
+	_ps_obj_src_pair( conf, "main-mpi", &sv[2*i], &sv[2*i+1]);
     } else {
-	_ps_obj_src_pair( conf, "main", &sv[0], &sv[1]);
+	_ps_obj_src_pair( conf, "main", &sv[2*i], &sv[2*i+1]);
     }
     k=1;
+#elif defined(ARCH_CELL)
+    _ps_obj_src_pair( conf, "main", &sv[2*i], &sv[2*i+1]);
+    k=1;
 #endif
+
     for(i=k; i<PS_AUX_FILES_LEN+k; i++) {
-	_ps_obj_src_pair( conf, _ps_aux_files[i], &sv[2*i], &sv[2*i+1]);
+	_ps_obj_src_pair( conf, _ps_aux_files[i-k], &sv[2*i], &sv[2*i+1]);
     }
     if( conf->app.prof ) {
 	_ps_obj_src_pair( conf, PS_AUX_PROF_ON, &sv[2*i], &sv[2*i+1]);
