@@ -90,9 +90,9 @@ typedef vector float           v4sf;//  __attribute__ (( vector_size (16), align
  *	vector pixel              8 16-bit unsigned halfword, 1/5/5/5 pixel
  *
  */
-#warning Type 'v2df' (2-vector of double) cannot be defined on the PPU
-#warning Type 'v2du' (2-vector of uint64_t) cannot be defined on the PPU
-#warning Type 'v2di' (2-vector of int64_t) cannot be defined on the PPU
+//#warning Type 'v2df' (2-vector of double) cannot be defined on the PPU
+//#warning Type 'v2du' (2-vector of uint64_t) cannot be defined on the PPU
+//#warning Type 'v2di' (2-vector of int64_t) cannot be defined on the PPU
 #endif /* defined(__PPU__) */
 
 #if defined(__SPU__)
@@ -141,8 +141,8 @@ typedef union {
     v2df  df;
     v2di  di;
 //    v2du  du;
-#else
-#   warning 2x64-bit fields will be missing from uv_t
+//#else
+//#   warning 2x64-bit fields will be missing from uv_t
 #endif
     v4sf  sf;
     v4si  si;
