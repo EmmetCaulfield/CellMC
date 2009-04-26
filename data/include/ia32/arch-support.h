@@ -2,9 +2,11 @@
 #define ARCH_SUPPORT_H
 
 #include <cellmc.h>
-
-#if THR==1
+#if THR==CMC_THR_ON
 #   include <pthread.h>
+#   include <sched.h>
+#   include <sys/types.h>
+#   include <linux/unistd.h>
 #endif
 
 
@@ -13,17 +15,6 @@
 #elif PREC==CMC_PREC_DOUBLE
 #   include "prec-double.h"
 #endif
-
-/*
- * #define if you want results
- */
-#undef DUMP_RESULTS
-
-/*
- * #define if you want a brief report when each trajectory ends.
- * Good for HSR. Horrible for ME.
- */
-#undef REPORT_ALL
 
 /*
  * Whether an cumulative array of propensity sums is maintained

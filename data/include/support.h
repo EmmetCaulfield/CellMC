@@ -1,6 +1,14 @@
 #ifndef SUPPORT_H
 #define SUPPORT_H
 
+/*
+ * This is necessary because of the linux-specific thread-affinity
+ * stuff.
+ */
+#if defined(__SSE2__) && THR==1
+#   define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 
 #if defined(__SPU__)
