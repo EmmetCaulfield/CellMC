@@ -60,6 +60,10 @@ void *ssa_thread(void *args)
     unsigned short rs[3];       /* erand48()-family state       */
 #endif
 
+#if THR == CMC_THR_ON
+    cpu_set_t affty;		/* Thread/CPU affinity mask	*/
+#endif
+
     uv_t popn[N_SPECIES];	/* Populations			*/
     uv_t rate[N_REACTIONS];	/* Propensities			*/
 
@@ -89,6 +93,18 @@ void *ssa_thread(void *args)
     register float newr; /* Temporary partial propensity sum accumulator */
 </xsl:if><xsl:text>
 
+    arg     = (ssa_thread_args_t *)args;
+
+#if THR==CMC_THR_ON
+    CPU_ZERO(&amp;affty);
+    CPU_SET(arg->thrid, &amp;affty);
+    sched_setaffinity(syscall(SYS_gettid), sizeof(cpu_set_t), &amp;affty);
+#endif
+
+
+
+
+
 #if RNG==CMC_RNG_RSMT
     rs = &amp;rs_obj;
 #endif
@@ -99,7 +115,6 @@ void *ssa_thread(void *args)
 
     flg.si = UV_1_4si;
 
-    arg     = (ssa_thread_args_t *)args;
     t_stopv = (v4sf){arg->t_stop,arg->t_stop,arg->t_stop,arg->t_stop};
     _vutil_srand( rs, (uint32_t)arg-&gt;seed );
 
