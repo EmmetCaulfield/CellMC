@@ -23,13 +23,20 @@ case $(hostname) in
 	suffix='duo'
 	flags='-m'
 	;;
-    ps1)
+    ps1.*)
 	suffix='clr'
 	flags='-M'
 	;;
-    cell2)
+    cell2.*)
 	suffix='ibm'
 	flags=''
+	;;
+    grad1.*)
+	suffix='grd'
+	flags='-m'
+	;;
+    arich)
+	suffix='opt'
 	;;
     *)
 	echo 'Unknown machine'
@@ -38,30 +45,30 @@ case $(hostname) in
 esac
 
 dir="results.$suffix"
-mkdir $dir || errexit "$dir already exists"
+#mkdir $dir || errexit "$dir already exists"
 
 
-dd4=(  'dd4' '../data/sbml/models/dd.xml'   '10000'    '10' )
-dd5=(  'dd5' 'dd5.xml'                      '10000'    '10' )
-me=(   'me'  'me-opt.xml'                 '1000000'  '1000' )
-cr=(   'cr'  'cr-opt.xml'                   '10000'    '25' )
-hsrA=( 'hsr' 'hsr-opt.xml'		    '10000'    '50' )
-hsrB=( 'hsr' 'hsr-opt.xml'                   '1000'   '500' )
+dd=(  'dd'  '../data/sbml/models/dd.xml'   '1000'  '20' )
+me=(  'me'  'me-opt.xml'  '10000' '500' )
+cr=(  'cr'  'cr-opt.xml'   '1000'  '25' )
+hsr=( 'hsr' 'hsr-opt.xml'  '1000'  '50' )
 
-prg=('dd4' 'dd5' 'me' 'cr' 'hsrA' 'hsrB')
-
+prg=('dd' 'me' 'cr' 'hsr')
 
 for p in ${prg[*]}; do
-    eval x=\${$p[0]}.$suffix
+    eval x=\${$p[0]}p.$suffix
     eval f=\${$p[1]}
-    ./cellmc $flags -o $x $f
+    ./cellmc --no-valid -mpo $x $f
 done
 
 for ((i=1;i<=10;i++)); do
     for p in ${prg[*]}; do
-	eval x=\${$p[0]}.$suffix
+	eval x=\${$p[0]}p.$suffix
 	eval n=\${$p[2]}
 	eval t=\${$p[3]}
-	./$x -o $dir/$x-${n}x$t-$i.out $n $t
+	f="$dir/$x-c8-${n}x$t-$i.xsl"
+	if ! [ -f $f ]; then
+	    echo ./$x -c8 -o $f $n $t
+	fi
     done
 done

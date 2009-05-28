@@ -4,9 +4,15 @@
 #include <cellmc.h>
 #if THR==CMC_THR_ON
 #   include <pthread.h>
-#   include <sched.h>
-#   include <sys/types.h>
-#   include <linux/unistd.h>
+#   if defined(OS_LINUX)
+#      if defined(HAVE_SYSCALL_H)
+#         include <syscall.h>
+#      else
+#         include <sched.h>
+#         include <sys/types.h>
+#         include <linux/unistd.h>
+#      endif
+#   endif
 #endif
 
 
