@@ -61,7 +61,7 @@ PKG_CHECK_MODULES([libxslt], [libxslt >= 1.1.11])
 # required on both platforms.
 AC_HEADER_STDBOOL
 AC_C_CONST
-AC_CHECK_HEADERS([limits.h getopt.h mpi.h])
+AC_CHECK_HEADERS([limits.h getopt.h mpi.h syscall.h])
 AC_CHECK_FUNCS([getopt_long], [], AC_MSG_ERROR([getopt_long is required]))
 AC_CHECK_FUNCS([posix_memalign memalign malloc_align]) 
 
