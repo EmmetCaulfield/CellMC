@@ -99,7 +99,7 @@ void *ssa_thread(void *args)
  * If we're on Linux, we can use CPU affinity to avoid
  * scaling problems on the last processor.
  */
-#if THR==CMC_THR_ON && defined(OS_LINUX)
+#if THR==CMC_THR_ON &amp;&amp; defined(OS_LINUX)
     CPU_ZERO(&amp;affty);
     CPU_SET(arg->thrid, &amp;affty);
     sched_setaffinity(syscall(SYS_gettid), sizeof(cpu_set_t), &amp;affty);
