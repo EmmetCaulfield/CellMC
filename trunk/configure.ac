@@ -65,7 +65,7 @@ AC_CHECK_HEADERS([limits.h getopt.h mpi.h syscall.h])
 AC_CHECK_FUNCS([getopt_long], [], AC_MSG_ERROR([getopt_long is required]))
 AC_CHECK_FUNCS([posix_memalign memalign malloc_align]) 
 
-AC_CONFIG_FILES([Makefile src/Makefile])         # RCTC
+AC_CONFIG_FILES([Makefile src/Makefile data/Makefile]) # RCTC
 
 # We need this to decide what to build in Makefile.am
 
