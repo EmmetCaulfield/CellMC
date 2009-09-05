@@ -6,6 +6,7 @@
 #   include <pthread.h>
 #   if defined(OS_LINUX)
 #      if defined(HAVE_SYSCALL_H)
+#         include <unistd.h>
 #         include <syscall.h>
 #      else
 #         include <sched.h>

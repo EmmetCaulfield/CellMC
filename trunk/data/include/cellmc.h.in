@@ -25,6 +25,12 @@
 #undef OS_DARWIN
 
 /*
+ * Different Linux versions have thread-affinity controlling syscalls
+ * in different places:
+ */
+#undef HAVE_SYSCALL_H
+
+/*
  * Define MALLOC_ALIGN16 and FREE_ALIGN16 according to platform and
  * availability of aligned memory functions.
  */
