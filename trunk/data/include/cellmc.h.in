@@ -86,9 +86,8 @@ typedef struct {
     bool     prof;		/* If this is a profiling binary	*/
 #if defined(__SSE2__)
     bool     thr;		/* If built with threading enabled	*/
-#elif defined(__PPU__) || defined(__PPC__)
-    bool     mpi;		/* If built with MPI enabled		*/
 #endif
+    bool     mpi;		/* If built with MPI enabled		*/
 
 /* Compile-time model parameters */
     int	     n_rxns;		/* Number of reactions (N_REACTIONS)	*/

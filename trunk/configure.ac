@@ -70,7 +70,7 @@ AC_CONFIG_FILES([Makefile src/Makefile data/Makefile]) # RCTC
 # We need this to decide what to build in Makefile.am
 
 case $target_cpu in
-    i686|x86_64)
+    i?86|x86_64)
 	AC_DEFINE(ARCH_IA32, 1, [For Intel or AMD])	# RCTC
 	CFLAGS="$CFLAGS -msse2"				# Necessary for older gccs
 	AC_CHECK_HEADERS([emmintrin.h mm_malloc.h])	# NART

@@ -164,6 +164,7 @@ void rc_getopts(runconfig_t *conf, int argc, char *argv[])
 
 	case RC_OPT_MPI:
 	    NOT_ON_IA32("MPI support");
+	    conf->app.mpi = false;
 #if defined(HAVE_MPI_H)
 	    conf->app.mpi = true;
 	    flags[c]++;
