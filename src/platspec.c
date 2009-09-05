@@ -189,7 +189,7 @@ const char ** ps_xslt_params(runconfig_t * const conf) {
      * model directly. They're only here for completeness.
      */
     PS_CATON( "N_RXNS"  ); PS_FMTON("'%d'", conf->app.n_rxns );
-    PS_CATON( "N_SPXS"  ); PS_FMTON("'%d'", conf->app.n_rxns );
+    PS_CATON( "N_SPXS"  ); PS_FMTON("'%d'", conf->app.n_spxs );
 
     sv[n]=NULL;
     sv[n+1]=NULL;
@@ -290,15 +290,12 @@ char **ps_aux_files(runconfig_t *const conf, int *len)
     static char *sv[AC_GCC_ARGS_MAX+1];
     int i=0, k=0;
 
-#if defined(HAVE_MPI_H)
+#if defined(ARCH_CELL)
     if( conf->app.mpi ) {
 	_ps_obj_src_pair( conf, "main-mpi", &sv[2*i], &sv[2*i+1]);
     } else {
 	_ps_obj_src_pair( conf, "main", &sv[2*i], &sv[2*i+1]);
     }
-    k=1;
-#elif defined(ARCH_CELL)
-    _ps_obj_src_pair( conf, "main", &sv[2*i], &sv[2*i+1]);
     k=1;
 #endif
 

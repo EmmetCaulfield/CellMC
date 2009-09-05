@@ -60,7 +60,7 @@ void *ssa_thread(void *args)
     unsigned short rs[3];       /* erand48()-family state       */
 #endif
 
-#if THR == CMC_THR_ON
+#if THR == CMC_THR_ON &amp;&amp; defined(OS_LINUX)
     cpu_set_t affty;		/* Thread/CPU affinity mask	*/
 #endif
 
