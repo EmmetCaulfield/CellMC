@@ -152,10 +152,10 @@ void *ssa_thread(void *args)
 	    /*
              * Fast reactions are at low indices
              */
-            for(i=0; r&gt;0.0f &amp;&amp; i&lt;=N_REACTIONS; i++) {
+            for(i=0; r&gt;0.0f &amp;&amp; i&lt;N_REACTIONS; i++) {
 		r -= rate[i].f[e];
 	    }
-	    --i;
+	    i = i&lt;=0 ? 0 : i-1;
 
             absrc++;
 #if PROF==CMC_PROF_ON
