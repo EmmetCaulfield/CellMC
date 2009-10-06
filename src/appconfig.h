@@ -51,6 +51,7 @@
 #define AC_GCC_ARGS_MAX         64
 #define AC_LBL_MAXLEN           64	/* At most 96 bytes free in CELL control block */
 
+//#define AC_SBML_XSD_FILE	"sbml-l1v2.xsd"
 #define AC_SBML_XSD_FILE	"sbml-l2v3.xsd"
 #define AC_CFLAGS		NULL
 
