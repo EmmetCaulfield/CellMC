@@ -35,7 +35,7 @@
  * complain under certain circumstances. These are "one trick" options
  * that ignore the rest of the line.
  */
-#define RC_COMMON_OPTS     "h::V::r:o:pmdvO::g"
+#define RC_COMMON_OPTS     "h::V::r:o:pmdvO::g::"
 #define RC_OPT_HELP        'h'
 #define RC_OPT_VER         'V'
 #define RC_OPT_LPR         'r'
@@ -62,10 +62,10 @@
 
 static struct option _longopts[] = {
 //#if defined(ARCH_IA32) 
-    { "log",        required_argument, NULL, RC_OPT_LOG         },
-    { "rng",        required_argument, NULL, RC_OPT_RNG         },
+    { "log",           required_argument, NULL, RC_OPT_LOG         },
+    { "rng",           required_argument, NULL, RC_OPT_RNG         },
 //#elif defined(ARCH_CELL)
-    { "mpi",        no_argument,       NULL, RC_OPT_MPI         },
+    { "mpi",           no_argument,       NULL, RC_OPT_MPI         },
 //#endif
     { "help",          optional_argument, NULL, RC_OPT_HELP        },
     { "version",       optional_argument, NULL, RC_OPT_VER         },
@@ -85,7 +85,7 @@ static struct option _longopts[] = {
     { "no-strip",      no_argument,       NULL, RC_OPT_NOSTRIP     },
     { "threading",     no_argument,       NULL, RC_OPT_THR         },
     { "gcc-optim",     optional_argument, NULL, RC_OPT_GCC_OPT_O   },
-    { "gcc-debug",     no_argument,       NULL, RC_OPT_GCC_OPT_g   },
+    { "gcc-debug",     optional_argument, NULL, RC_OPT_GCC_OPT_g   },
     { "arch",          required_argument, NULL, RC_OPT_ARCH        },
     { 0, 0, 0, 0 } /* Required sentinel */
 };
@@ -287,7 +287,13 @@ void rc_getopts(runconfig_t *conf, int argc, char *argv[])
      * exists and is readable.
      */
     DIE_IF(optind >= argc,   "No SBML file specified");
-    DIE_IF(argc-optind != 1, "Too many non-option arguments");
+    if( argc-optind != 1 ) {
+	fprintf(stderr, "%s: argc=%d, optind=%d\n", PACKAGE_NAME, argc, optind);
+	for(c=optind; c<argc; c++) {
+	    fprintf(stderr, "\t%d: [%s]\n", c, argv[c]);
+	}
+	DIE("Too many non-option arguments");
+    }
     conf->sbmlfile = strdup(argv[optind]);
     fp=fopen(conf->sbmlfile, "r");
     DIE_IF(fp==NULL, "Cannot open file '%s'", conf->sbmlfile);
