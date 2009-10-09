@@ -106,9 +106,6 @@ void *ssa_thread(void *args)
 #endif
 
 
-
-
-
 #if RNG==CMC_RNG_RSMT
     rs = &amp;rs_obj;
 #endif
@@ -155,7 +152,7 @@ void *ssa_thread(void *args)
             for(i=0; r&gt;0.0f &amp;&amp; i&lt;N_REACTIONS; i++) {
 		r -= rate[i].f[e];
 	    }
-	    i = i&lt;=0 ? 0 : i-1;
+	    i=i-1;
 
             absrc++;
 #if PROF==CMC_PROF_ON
@@ -170,13 +167,13 @@ void *ssa_thread(void *args)
 <xsl:text>
 
             if( ! flg.i32[e] ) {
+	        k++;
 #if PROF==CMC_PROF_OFF
                 for(i=0; i&lt;N_SPECIES; i++) {
-                    SAVED(k,i)=SPOP(i,e);
+                    SAVED((k-1),i)=SPOP(i,e);
 		    SPOP(i,e)=ipop[i];
                 }
 #endif
-	        k++;
                 conrc   += nr[e];
 		nr[e]    = 0;
 		t.f[e]   = 0.0f;
@@ -185,6 +182,9 @@ void *ssa_thread(void *args)
 </xsl:text>
     <xsl:if test="$LPR != 'none'">
       <xsl:text>                _update_rates(rate, popn);&#10;</xsl:text>
+    </xsl:if>
+    <xsl:if test="$LPR != 'full'">
+        <xsl:text>              r_sum.sf=SUM_RATES;&#10;</xsl:text>
     </xsl:if>
 <xsl:text>
 	    }
