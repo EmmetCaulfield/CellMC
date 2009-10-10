@@ -23,6 +23,7 @@
 #undef HAVE_MALLOC_ALIGN
 #undef OS_LINUX
 #undef OS_DARWIN
+#undef OS_CYGWIN
 
 /*
  * Different Linux versions have thread-affinity controlling syscalls
@@ -41,7 +42,7 @@
 #   elif defined(OS_DARWIN)
 #       define MALLOC_ALIGN16(PTR,SZ)  (PTR=malloc(SZ))
 #       define FREE_ALIGN16(PTR)       free(PTR)
-#   elif defined(OS_LINUX)
+#   elif defined(OS_LINUX) || defined(OS_CYGWIN)
 #       if defined(HAVE_POSIX_MEMALIGN)
 #           define MALLOC_ALIGN16(PTR,SZ)  posix_memalign(&PTR, 16, SZ)
 #           define FREE_ALIGN16(PTR)       free(PTR)
