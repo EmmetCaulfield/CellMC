@@ -98,6 +98,10 @@ case $target_os in
      linux-*)
          AC_DEFINE(OS_LINUX, 1, [For Linux])
      ;;
+     cygwin)
+         AC_DEFINE(OS_CYGWIN, 1, [For Cygwin])
+	 LDFLAGS="$LDFLAGS --dll-search-prefix=cyg -L/bin -lxml2-2 -lxslt-1"
+     ;;
      *)
          AC_MSG_ERROR([$target_os not supported])
      ;;
