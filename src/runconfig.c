@@ -3,10 +3,17 @@
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
+#include <getopt.h>
 
 #include <config.h>
 
 #include <cellmc.h>
+#if defined(OS_CYGWIN)
+#   define OPT_CDECL __attribute__((dllimport))
+#else
+#   define OPT_CDECL
+#endif
+
 #include <error-macros.h>
 #include <option-mapping.h>
 
@@ -90,21 +97,6 @@ static struct option _longopts[] = {
     { 0, 0, 0, 0 } /* Required sentinel */
 };
 
-/* 
- * Long Option Index: We only ever call this when we're about to quit,
- * so we don't care about it being horrible.
- *
-#define LO_LAST (sizeof(_longopts)/sizeof(struct option)-1)
-static int _loi(int c) {
-    unsigned i;
-    for(i=0; i<LO_LAST; i++) {
-	if( _longopts[i].val == c )
-	    return i;
-    }
-    DIE("Failed to find long option for '-%c'\n", c);
-}
-#undef LO_LAST
- */
 
 #if defined(ARCH_CELL)
 #   define NOT_ON_CELL(MSG) DIE(MSG " is not available on Cell/BE")
@@ -117,8 +109,10 @@ static int _loi(int c) {
 
 void rc_getopts(runconfig_t *conf, int argc, char *argv[])
 {
-    extern char *optarg;
-    extern int optind, opterr, optopt;
+    extern char *optarg OPT_CDECL;
+    extern int optind OPT_CDECL;
+    extern int opterr OPT_CDECL;
+    extern int optopt OPT_CDECL;
     int c;
     unsigned int flags[128]={0};
     FILE *fp;

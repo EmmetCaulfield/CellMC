@@ -20,6 +20,12 @@
 #include "app-support.h"
 #include "error-macros.h"
 
+#if defined(OS_CYGWIN)
+#   define OPT_CDECL __attribute__((dllimport))
+#else
+#   define OPT_CDECL
+#endif
+
 #if MPI==CMC_MPI_ON
 #   include <mpi.h>
 #endif
@@ -29,7 +35,6 @@
 #else
 #   include "reaction-stats.h"
 #endif
-
 
 #if defined(__PPU__)
 #   define CORE "SPU"
@@ -124,8 +129,10 @@ void si_init(sim_info_t *si, int argc, char * argv[])
     int c;			/* CLA flag character from getopt()	*/
     int flags[128]={ 0 };
 
-    extern char *optarg;
-    extern int optind, opterr, optopt;
+    extern char *optarg OPT_CDECL;
+    extern int optind OPT_CDECL;
+    extern int opterr OPT_CDECL;
+    extern int optopt OPT_CDECL;
 
     struct timeval tv;
 
