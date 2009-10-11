@@ -178,7 +178,7 @@ void rs_init(sim_info_t *si)
     }
 
     rxn_ttl = _rs_sort(rs);
-    WARN_IF(si->abs_rxn_total!=rxn_ttl, "Reaction counts don't match as expected");
+    WARN_IF(si->abs_rxn_total<rxn_ttl, "Reaction counts don't match as expected");
 }
 
 
