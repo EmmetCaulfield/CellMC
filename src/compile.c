@@ -12,13 +12,14 @@
 #include <utils.h>
 
 
-
+#if defined(ARCH_CELL)
 static const char *_ps_ppu_ld_args[] = {
     "-Wl,-m,elf32ppc"	,
     "-lmisc"		,
     "-lspe2"
 };
 #define PS_PPU_LD_ARGS_LEN ((int)(sizeof(_ps_ppu_ld_args)/sizeof(char *)))
+#endif /* defined(ARCH_CELL) */
 
 
 static void _run(char *exe, const char **argv, runconfig_t *conf) {
@@ -40,9 +41,9 @@ static void _run(char *exe, const char **argv, runconfig_t *conf) {
 	RCHECK(status, !=-1, execvp);
     }
 
-    DIE_IF( ! WIFEXITED(status), exe );
+    DIE_IF( !WIFEXITED(status), "%s did not exit normally", exe );
     status=WEXITSTATUS(status);
-    DIE_IF( status!=0, exe );
+    DIE_IF( status!=0, "%s had nonzero exit status", exe );
 
     if( conf->verbose ) {
 	CLOG("%s exited with status %d\n", exe, status);
