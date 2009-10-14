@@ -16,6 +16,8 @@ cellmc_CFLAGS =	$(libXML_CFLAGS)	\
 
 cellmc_CPPFLAGS = -I@top_srcdir@/data/include
 
+nobase_dist_pkgdata_DATA  = test/test.sh
+nobase_dist_pkgdata_DATA += test/Makefile
 
 cellmc.c: autodirs.h
 
