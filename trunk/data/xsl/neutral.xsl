@@ -38,16 +38,16 @@
     <xsl:call-template name="popn-const"   />
     <xsl:call-template name="macros"       />
     <xsl:call-template name="prop-funcs"   />
-    <xsl:call-template name="update-rates" />
+    <xsl:call-template name="update-props" />
     <xsl:call-template name="main"         />
   </xsl:template>
 
 
 <!-- Suppresses a weird appearance of svn: data in
-     apply-templates match=".../s:reaction" mode="rates" -->
+     apply-templates match=".../s:reaction" mode="props" -->
 
   <xsl:template match="svn:*|k:*"/>
-  <xsl:template match="svn:*|k:*" mode="rates"/>
+  <xsl:template match="svn:*|k:*" mode="props"/>
   <xsl:template match="svn:*|k:*" mode="const"/>
 
 

@@ -39,7 +39,7 @@ int main(uint64_t speid, uint64_t argp)
 #define SAVED(TRJ,SPX) saved[TRJ*N_SPECIES+SPX]
 
     uv_t *popn;			/* Working populations          */
-    uv_t rate[N_REACTIONS];	/* Propensities			*/
+    uv_t prop[N_REACTIONS];	/* Propensities			*/
     register v4sf t;		/* Elapsed simulation time	*/
     register v4sf tau;		/* Timestep			*/
     register v4sf kea;		/* Kahan tau error accumulator	*/
@@ -120,7 +120,7 @@ int main(uint64_t speid, uint64_t argp)
 	    while( (flg=spu_extract(spu_gather(flags=spu_cmpgt(t_stopv,t)),0)) ) {
 
 	        // equiv:update-propensities
-	        _update_rates(rate, popn);
+	        _update_props(prop, popn);
 		r_sum=SUM_RATES;
 
 		// equiv:update-times
@@ -205,30 +205,30 @@ int main(uint64_t speid, uint64_t argp)
 
 <!--
 =======================================================
-Generate the update_rates function
+Generate the update_props function
 ======================================================= 
 -->
-  <xsl:template name="update-rates">
+  <xsl:template name="update-props">
     <!-- Function header -->
     <xsl:text>
 /*
- * [name="update-rates"]
+ * [name="update-props"]
  */
 
 /*
  * Sum an array of reaction propensities:
  */
 #if defined(CUMULATIVE_SUM_ARRAY)
-static inline v4sf _sum_rates(uv_t rate[], uv_t cumr[]) 
+static inline v4sf _sum_props(uv_t prop[], uv_t cumr[]) 
 #else
-static inline v4sf _sum_rates(uv_t rate[])
+static inline v4sf _sum_props(uv_t prop[])
 #endif
 {
     int i;
     v4sf r_sum=UV_0_4sf;
 
     for(i=N_REACTIONS-1; i&gt;=0; i--) {
-        r_sum += rate[i].sf;
+        r_sum += prop[i].sf;
 #if defined(CUMULATIVE_SUM_ARRAY)
         cumr[i].sf = r_sum;
 #endif
@@ -236,26 +236,26 @@ static inline v4sf _sum_rates(uv_t rate[])
     return r_sum;
 }
 #if defined(CUMULATIVE_SUM_ARRAY)
-#   define SUM_RATES _sum_rates(rate, cumr) 
+#   define SUM_RATES _sum_props(prop, cumr) 
 #else
-#   define SUM_RATES _sum_rates(rate)
+#   define SUM_RATES _sum_props(prop)
 #endif
 
 
 /*
  * Update reaction propensities
  */
-static inline void _update_rates(uv_t rate[], uv_t popn[])
+static inline void _update_props(uv_t prop[], uv_t popn[])
 {
 </xsl:text>
-    <xsl:apply-templates match="/s:sbml/s:model/s:listOfReactions/s:reaction" mode="rates" />
+    <xsl:apply-templates match="/s:sbml/s:model/s:listOfReactions/s:reaction" mode="props" />
 <xsl:text>
 }
 </xsl:text>
   </xsl:template>
 
-  <xsl:template match="s:reaction" mode="rates">
-    <xsl:text>    rate[i_</xsl:text>
+  <xsl:template match="s:reaction" mode="props">
+    <xsl:text>    prop[i_</xsl:text>
     <xsl:value-of select="./@id"/>
     <xsl:text>].sf=VEQN_</xsl:text>
     <xsl:value-of select="./@id"/>
@@ -311,7 +311,7 @@ ELEMENT_<xsl:value-of select="$slot"/>:
 
   <xsl:template match="s:reaction" mode="case">
     <xsl:param name="slot"/>
-		tmp -= spu_extract(rate[i_<xsl:value-of select="@id"/>].sf, <xsl:value-of select="$slot"/>);
+		tmp -= spu_extract(prop[i_<xsl:value-of select="@id"/>].sf, <xsl:value-of select="$slot"/>);
 		if( 0.0f > tmp ) {
 		    DU_PRINTF("SPU| %10s++ (%2u) in slot %2u\n", "<xsl:value-of select='@id'/>", <xsl:value-of select="position()"/>, <xsl:value-of select="$slot"/>);
 		    nr_rxn[<xsl:value-of select="position()-1"/>].su += c_1_in_pos_<xsl:value-of select="$slot"/>;
@@ -352,9 +352,9 @@ ELEMENT_<xsl:value-of select="$slot"/>:
   </xsl:template>
 
   <xsl:template match="s:reaction" mode="adjust-prop">
-            r_sum -= rate[i_<xsl:value-of select="./@id"/>].sf;
-            rate[i_<xsl:value-of select="./@id"/>].sf=<xsl:apply-templates match="./s:kineticLaw"/>;
-            r_sum += rate[i_<xsl:value-of select="./@id"/>].sf;
+            r_sum -= prop[i_<xsl:value-of select="./@id"/>].sf;
+            prop[i_<xsl:value-of select="./@id"/>].sf=<xsl:apply-templates match="./s:kineticLaw"/>;
+            r_sum += prop[i_<xsl:value-of select="./@id"/>].sf;
   </xsl:template>
 
 

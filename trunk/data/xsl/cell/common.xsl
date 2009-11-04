@@ -230,17 +230,17 @@ Generate the propensity recalculation functions
       <xsl:text>                    /* Adjusting </xsl:text>
       <xsl:value-of select="./@id"/>
       <xsl:text> */&#10;</xsl:text>
-      <xsl:text>                    oldr += rate[i_</xsl:text>
+      <xsl:text>                    oldr += prop[i_</xsl:text>
       <xsl:value-of select="./@id"/>
       <xsl:text>].f[e];&#10;</xsl:text>
     </xsl:if>
-    <xsl:text>                    rate[i_</xsl:text>
+    <xsl:text>                    prop[i_</xsl:text>
     <xsl:value-of select="./@id"/>
     <xsl:text>].f[e]=SEQN_</xsl:text>
     <xsl:value-of select="./@id"/>
     <xsl:text>(e);&#10;</xsl:text>
     <xsl:if test="$LPR='full'">
-      <xsl:text>                    newr += rate[i_</xsl:text>
+      <xsl:text>                    newr += prop[i_</xsl:text>
       <xsl:value-of select="./@id"/>
       <xsl:text>].f[e];&#10;</xsl:text>
     </xsl:if>

@@ -13,7 +13,7 @@ octave=octave
 xsltp=xsltproc
 cellmc=../cellmc
 mdldir=../../data/sbml/models
-tolpc=5
+tolpc=2
 models=('dd' 'me' 'cr' 'hsr')
 
 # Profiling run arguments:
@@ -30,10 +30,10 @@ phsr=( '8'  '50' )
 # trajectories for 500s HSR and ME (roughly 3 Tr/s) is only
 #
 #    #trjs t_final   E(Rx/Tr)
-tdd=(  '8'    '15'    '20000')
-tme=(  '8'  '1000'     '3000')
-tcr=(  '8'    '50'  '8000000')
-thsr=( '8'   '500' '61000000')
+tdd=(  '8'    '15'     '28000')
+tme=(  '8'  '1000'      '3100')
+tcr=(  '8'    '50' '274000000')
+thsr=( '8'   '500'  '61000000')
 
 
 function errexit () {
@@ -45,8 +45,23 @@ function errexit () {
     if [ -z "$msg" ]; then
 	msg='Unspecified error'
     fi
-    echo "FATAL: $msg."
+    echo "FATAL: $msg." >&2
     exit $code
+}
+
+function warn() {
+    echo "WARNING: $@." >&2
+}
+
+# Make sure a model exists.
+function model_exists () {
+    m=$1; shift;
+    sbml="$mdldir/$m.xml"
+    if [ -e "$sbml" -a -r "$sbml" ]; then
+	return 0;
+    fi
+    warn "Model '$m' does not exist"
+    return 1;
 }
 
 function build_profiling_exe () {
@@ -147,7 +162,7 @@ function are_pops_nonnegative () {
 
     echo -n "Checking '$m' final populations are nonnegative... "
     cat<<EOF | $octave -q
-p=load $m.out;
+p=load("$m.out");
 if min(min(p)')<0,
     exit(1);
 end
@@ -210,7 +225,10 @@ if ! which $octave >/dev/null 2>&1; then
 fi
 
 # Iterate over the models, optimize and run them:
-for m in ${models[*]}; do
+for m in $@; do
+    if ! model_exists $m; then
+	continue;
+    fi
     build_profiling_exe $m
     profiling_run $m
     extract_prof_data $m 
@@ -220,4 +238,3 @@ for m in ${models[*]}; do
     are_pops_nonnegative $m
     check_traj_length $m
 done
-

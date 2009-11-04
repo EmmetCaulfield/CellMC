@@ -39,7 +39,7 @@ int main(uint64_t speid, uint64_t argp)
 #define SAVED(TRJ,SPX) saved[TRJ*N_SPECIES+SPX]
 
     uv_t popn[N_SPECIES];	/* Working populations          */
-    uv_t rate[N_REACTIONS];	/* Propensities			*/
+    uv_t prop[N_REACTIONS];	/* Propensities			*/
 #if defined(CUMULATIVE_SUM_ARRAY)
     uv_t cumr[N_REACTIONS];	/* Cumulative propensity sums	*/
 #endif
@@ -112,7 +112,7 @@ int main(uint64_t speid, uint64_t argp)
         for(n=0; n&lt;n_trjs; ) {
 </xsl:text>
     <xsl:if test="$LPR = 'none'">
-        <xsl:text>        _update_rates(rate, popn);&#10;</xsl:text>
+        <xsl:text>        _update_props(prop, popn);&#10;</xsl:text>
     </xsl:if>
     <xsl:if test="$LPR != 'full'">
         <xsl:text>        r_sum.sf=SUM_RATES;&#10;</xsl:text>
@@ -136,7 +136,7 @@ int main(uint64_t speid, uint64_t argp)
                 ; // Yes, I mean it!
 #else
             for(i=0; r&gt;0.0f &amp;&amp; i&lt;=N_REACTIONS; i++) {
-		r -= rate[i].f[e];
+		r -= prop[i].f[e];
 	    }
 #endif
 	    --i;
@@ -160,7 +160,7 @@ int main(uint64_t speid, uint64_t argp)
 		kea.f[e]        = 0.0f;
 </xsl:text>
     <xsl:if test="$LPR != 'none'">
-      <xsl:text>                _update_rates(rate, popn);&#10;</xsl:text>
+      <xsl:text>                _update_props(prop, popn);&#10;</xsl:text>
     </xsl:if>
 <xsl:text>
 	    }
@@ -235,30 +235,30 @@ int main(uint64_t speid, uint64_t argp)
 
 <!--
 =======================================================
-Generate the update_rates function
+Generate the update_props function
 ======================================================= 
 -->
-  <xsl:template name="update-rates">
+  <xsl:template name="update-props">
     <!-- Function header -->
     <xsl:text>
 /*
- * [name="update-rates"]
+ * [name="update-props"]
  */
 
 /*
  * Sum an array of reaction propensities:
  */
 #if defined(CUMULATIVE_SUM_ARRAY)
-static inline v4sf _sum_rates(uv_t rate[], uv_t cumr[]) 
+static inline v4sf _sum_props(uv_t prop[], uv_t cumr[]) 
 #else
-static inline v4sf _sum_rates(uv_t rate[])
+static inline v4sf _sum_props(uv_t prop[])
 #endif
 {
     int i;
     v4sf r_sum=UV_0_4sf;
 
     for(i=N_REACTIONS-1; i&gt;=0; i--) {
-        r_sum += rate[i].sf;
+        r_sum += prop[i].sf;
 #if defined(CUMULATIVE_SUM_ARRAY)
         cumr[i].sf = r_sum;
 #endif
@@ -266,26 +266,26 @@ static inline v4sf _sum_rates(uv_t rate[])
     return r_sum;
 }
 #if defined(CUMULATIVE_SUM_ARRAY)
-#   define SUM_RATES _sum_rates(rate, cumr) 
+#   define SUM_RATES _sum_props(prop, cumr) 
 #else
-#   define SUM_RATES _sum_rates(rate)
+#   define SUM_RATES _sum_props(prop)
 #endif
 
 
 /*
  * Update reaction propensities
  */
-static inline void _update_rates(uv_t rate[], uv_t popn[])
+static inline void _update_props(uv_t prop[], uv_t popn[])
 {
 </xsl:text>
-    <xsl:apply-templates match="/s:sbml/s:model/s:listOfReactions/s:reaction" mode="rates" />
+    <xsl:apply-templates match="/s:sbml/s:model/s:listOfReactions/s:reaction" mode="props" />
 <xsl:text>
 }
 </xsl:text>
   </xsl:template>
 
-  <xsl:template match="s:reaction" mode="rates">
-    <xsl:text>    rate[i_</xsl:text>
+  <xsl:template match="s:reaction" mode="props">
+    <xsl:text>    prop[i_</xsl:text>
     <xsl:value-of select="./@id"/>
     <xsl:text>].sf=VEQN_</xsl:text>
     <xsl:value-of select="./@id"/>
