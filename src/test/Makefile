@@ -6,7 +6,7 @@ files+=$(profs) $(addsuffix .cnt,$(profs)) $(addsuffix .ord,$(profs)) $(addsuffi
 default: test.log
 
 test.log:
-	./test.sh | tee test.log
+	./test.sh $(models) | tee test.log
 
 clean:
 	rm -f $(files)

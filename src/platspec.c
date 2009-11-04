@@ -332,9 +332,11 @@ void ps_gcc_argv(runconfig_t * const conf, char *sv[], char **pp, int *nn)
 
     PS_FMTON("-DTHR=%d", conf->app.thr);
 
+#if !defined(OS_CYGWIN)
     if( conf->app.thr ) {
 	PS_CATON("-pthread");
     }
+#endif
 
     if( conf->app.arch != NULL ) {
 	PS_FMTON("-march=%s", conf->app.arch);
