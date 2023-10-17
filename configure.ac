@@ -23,12 +23,12 @@
 # compile-time check").
 
 # Define an m4 macro for the SVN revision
-define([svnversion], esyscmd([sh -c "svnversion|tr -d '\n'"]))
+define([svnversion], esyscmd([sh -c "git rev-parse --short HEAD | sed 's/^/0x/' | tr -d '\n'"]))
 
 # Basic setup:
-AC_PREREQ([2.59])
-AC_INIT([cellmc], [0.2.svnversion], [emmet-cellmc@caulfield.info])
-AC_DEFINE(SVN_REVISION, "svnversion", [SVN Revision])
+AC_PREREQ([2.69])
+AC_INIT([cellmc],[0.2.svnversion],[emmet-cellmc@caulfield.info])
+AC_DEFINE(SVN_REVISION, svnversion, [SVN Revision])
 AC_REVISION([$Rev$])
 AC_CONFIG_AUX_DIR([config])
 
